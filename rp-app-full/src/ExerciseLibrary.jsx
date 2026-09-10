@@ -69,7 +69,20 @@ const s = {
     cursor: "pointer",
     marginBottom: 16,
   },
-  media: { width: "100%", borderRadius: 8, marginBottom: 12, background: "#0a0a0a" },
+  imageRow: {
+    display: "flex",
+    gap: 8,
+    marginBottom: 12,
+    overflowX: "auto",
+  },
+  image: {
+    width: 140,
+    height: 140,
+    objectFit: "cover",
+    borderRadius: 8,
+    background: "#0a0a0a",
+    flexShrink: 0,
+  },
   step: { fontSize: 13, color: "#ccc", marginBottom: 8, lineHeight: 1.5 },
   addButton: {
     width: "100%",
@@ -85,12 +98,13 @@ const s = {
   },
 };
 
-// Common RP-style body part categories for quick browsing.
-const BODY_PARTS = ["chest", "back", "shoulders", "upper legs", "upper arms", "waist"];
+// This dataset categorizes by primaryMuscles, not body region, so these
+// chips map to the muscle-group terms actually used in the data.
+const MUSCLE_GROUPS = ["chest", "lats", "shoulders", "quadriceps", "biceps", "abdominals"];
 
 export default function ExerciseLibrary({ onSelectExercise }) {
   const [query, setQuery] = useState("");
-  const [activePart, setActivePart] = useState(BODY_PARTS[0]);
+  const [activeGroup, setActiveGroup] = useState(MUSCLE_GROUPS[0]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -102,10 +116,10 @@ export default function ExerciseLibrary({ onSelectExercise }) {
     try {
       const data = query.trim()
         ? await exerciseLibrary.searchExercises(query.trim())
-        : await exerciseLibrary.getExercisesByBodyPart(activePart);
+        : await exerciseLibrary.getExercisesByBodyPart(activeGroup);
       setResults(data);
     } catch (err) {
-      setError("Couldn't reach the exercise library. Check VITE_EXERCISEDB_URL in your .env.");
+      setError("Couldn't load the exercise library right now. Try again in a moment.");
     } finally {
       setLoading(false);
     }
@@ -114,7 +128,7 @@ export default function ExerciseLibrary({ onSelectExercise }) {
   useEffect(() => {
     runSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePart]);
+  }, [activeGroup]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -122,12 +136,8 @@ export default function ExerciseLibrary({ onSelectExercise }) {
   };
 
   const openDetail = async (exercise) => {
-    try {
-      const full = await exerciseLibrary.getExerciseById(exercise.exerciseId ?? exercise.id);
-      setSelected(full);
-    } catch {
-      setSelected(exercise); // fall back to list data if detail fetch fails
-    }
+    const full = await exerciseLibrary.getExerciseById(exercise.id);
+    setSelected(full ?? exercise);
   };
 
   return (
@@ -143,13 +153,13 @@ export default function ExerciseLibrary({ onSelectExercise }) {
 
       {!query.trim() && (
         <div style={s.bodyPartRow}>
-          {BODY_PARTS.map((part) => (
+          {MUSCLE_GROUPS.map((group) => (
             <button
-              key={part}
-              style={s.chip(part === activePart)}
-              onClick={() => setActivePart(part)}
+              key={group}
+              style={s.chip(group === activeGroup)}
+              onClick={() => setActiveGroup(group)}
             >
-              {part}
+              {group}
             </button>
           ))}
         </div>
@@ -162,10 +172,10 @@ export default function ExerciseLibrary({ onSelectExercise }) {
       )}
 
       {results.map((ex) => (
-        <div key={ex.exerciseId ?? ex.id} style={s.card} onClick={() => openDetail(ex)}>
+        <div key={ex.id} style={s.card} onClick={() => openDetail(ex)}>
           <div style={s.cardTitle}>{ex.name}</div>
           <div style={s.cardMeta}>
-            {(ex.bodyParts ?? []).join(", ")} {ex.equipments ? `· ${ex.equipments.join(", ")}` : ""}
+            {(ex.primaryMuscles ?? []).join(", ")} {ex.equipment ? `· ${ex.equipment}` : ""}
           </div>
         </div>
       ))}
@@ -176,22 +186,19 @@ export default function ExerciseLibrary({ onSelectExercise }) {
             <button style={s.closeButton} onClick={() => setSelected(null)}>← Back</button>
             <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>{selected.name}</div>
 
-            {selected.videoUrl && (
-              <video style={s.media} src={selected.videoUrl} controls playsInline />
-            )}
-            {!selected.videoUrl && selected.imageUrl && (
-              <img style={s.media} src={selected.imageUrl} alt={selected.name} />
+            {selected.imageUrls?.length > 0 && (
+              <div style={s.imageRow}>
+                {selected.imageUrls.map((url, i) => (
+                  <img key={i} style={s.image} src={url} alt={`${selected.name} step ${i + 1}`} />
+                ))}
+              </div>
             )}
 
-            {selected.targetMuscles && (
-              <p style={s.cardMeta}>
-                Target: {selected.targetMuscles.join(", ")}
-              </p>
+            {selected.primaryMuscles && (
+              <p style={s.cardMeta}>Target: {selected.primaryMuscles.join(", ")}</p>
             )}
-            {selected.equipments && (
-              <p style={{ ...s.cardMeta, marginBottom: 12 }}>
-                Equipment: {selected.equipments.join(", ")}
-              </p>
+            {selected.equipment && (
+              <p style={{ ...s.cardMeta, marginBottom: 12 }}>Equipment: {selected.equipment}</p>
             )}
 
             {(selected.instructions ?? []).map((step, i) => (
