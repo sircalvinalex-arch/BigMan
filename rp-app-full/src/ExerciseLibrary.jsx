@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { exerciseLibrary, EQUIPMENT_OPTIONS } from "./exerciseLibrary.js";
+import { findMuscleForExercise } from "./exercisePool.js";
+import { getMuscleFunction, getRealLifeTranslation } from "./exerciseInsights.js";
 
 const s = {
   wrap: { marginTop: 8 },
@@ -140,6 +142,7 @@ export default function ExerciseLibrary({ onSelectExercise }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
+  const [muscleFunction, setMuscleFunction] = useState(null);
   const [selectedEquipment, setSelectedEquipment] = useState(loadSavedEquipment);
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false);
 
@@ -181,6 +184,8 @@ export default function ExerciseLibrary({ onSelectExercise }) {
   const openDetail = async (exercise) => {
     const full = await exerciseLibrary.getExerciseById(exercise.id);
     setSelected(full ?? exercise);
+    const muscleKey = await findMuscleForExercise((full ?? exercise).name);
+    setMuscleFunction(muscleKey ? getMuscleFunction(muscleKey) : null);
   };
 
   return (
@@ -250,6 +255,11 @@ export default function ExerciseLibrary({ onSelectExercise }) {
           <div style={s.cardMeta}>
             {(ex.primaryMuscles ?? []).join(", ")} {ex.equipment ? `· ${ex.equipment}` : ""}
           </div>
+          {ex.mechanic === "compound" && ex.secondaryMuscles?.length > 0 && (
+            <div style={{ ...s.cardMeta, fontSize: 11, color: "#666", marginTop: 2 }}>
+              Also works: {ex.secondaryMuscles.join(", ")}
+            </div>
+          )}
         </div>
       ))}
 
@@ -268,11 +278,26 @@ export default function ExerciseLibrary({ onSelectExercise }) {
             )}
 
             {selected.primaryMuscles && (
-              <p style={s.cardMeta}>Target: {selected.primaryMuscles.join(", ")}</p>
+              <p style={s.cardMeta}>Primary: {selected.primaryMuscles.join(", ")}</p>
+            )}
+            {selected.secondaryMuscles?.length > 0 && (
+              <p style={s.cardMeta}>Also works: {selected.secondaryMuscles.join(", ")}</p>
             )}
             {selected.equipment && (
               <p style={{ ...s.cardMeta, marginBottom: 12 }}>Equipment: {selected.equipment}</p>
             )}
+
+            {muscleFunction && (
+              <div style={{ background: "#0a0a0a", borderRadius: 8, padding: 10, marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: "#8ab4e8", fontWeight: 700, marginBottom: 4 }}>What this muscle does</div>
+                <p style={{ fontSize: 12, color: "#ccc", lineHeight: 1.5 }}>{muscleFunction.function}</p>
+              </div>
+            )}
+
+            <div style={{ background: "#0a0a0a", borderRadius: 8, padding: 10, marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "#7ad67a", fontWeight: 700, marginBottom: 4 }}>In real life</div>
+              <p style={{ fontSize: 12, color: "#ccc", lineHeight: 1.5 }}>{getRealLifeTranslation(selected.name)}</p>
+            </div>
 
             {(selected.instructions ?? []).map((step, i) => (
               <p key={i} style={s.step}>
