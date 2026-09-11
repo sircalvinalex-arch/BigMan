@@ -174,7 +174,7 @@ export default function YogaLibrary() {
       ))}
 
       {selected && (
-        <div style={s.detailOverlay} onClick={() => setSelected(null)}>
+        <div style={{ ...s.detailOverlay, zIndex: 60 }} onClick={() => setSelected(null)}>
           <div style={s.detailCard} onClick={(e) => e.stopPropagation()}>
             <button style={s.closeButton} onClick={() => setSelected(null)}>← Back</button>
             <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 2 }}>{selected.sanskritName}</div>
@@ -230,10 +230,7 @@ export default function YogaLibrary() {
               <div
                 key={pose.id}
                 style={s.poseCard}
-                onClick={() => {
-                  setActiveSeries(null);
-                  setSelected(pose);
-                }}
+                onClick={() => setSelected(pose)}
               >
                 <div style={s.poseTitle}>{i + 1}. {pose.sanskritName}</div>
                 <div style={s.sanskrit}>{pose.englishName}</div>
