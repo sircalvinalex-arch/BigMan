@@ -17,13 +17,13 @@
 //   - Small deviations (within ~1 RIR) are treated as noise and don't
 //     trigger an adjustment, since session-to-session variance is normal.
 
-const NOISE_THRESHOLD = 1; // RIR difference within this range is ignored
+export const NOISE_THRESHOLD = 1; // RIR difference within this range is ignored
 const MAX_ADJUSTMENT_SETS = 2; // cap how much any single week can shift
 
 // workouts: array of logged workout rows (each with .exercises[].sets[].rir)
 // plannedExercisesForWeek: the plan's exercise list for the week just completed,
 //   each with { muscle, name, sets, rir (planned) }
-function computeMuscleFeedback(workouts, plannedExercisesForWeek) {
+export function computeMuscleFeedback(workouts, plannedExercisesForWeek) {
   const feedbackByMuscle = {};
 
   for (const planned of plannedExercisesForWeek) {

@@ -31,8 +31,18 @@
 
 const BASE_URL = "https://yoga-api-nzy4.onrender.com/v1";
 
+// The free-tier host sleeps when idle and can take 30-60s to wake up on
+// its first request. 15s was too aggressive — a cold start that took,
+// say, 20s would abort, latch as "failed", and then EVERY pose for the
+// rest of the session would come back with no image, since nothing ever
+// retried. Timeout is now generous enough to survive a real cold start,
+// and a failure is retried after a cooldown instead of being permanent.
+const FETCH_TIMEOUT_MS = 45000;
+const RETRY_COOLDOWN_MS = 20000;
+
 let allPosesCache = null; // the full list fetched from the API, once
-let fetchAttempted = false;
+let lastFetchAttemptAt = 0;
+let fetchInFlight = null; // dedupes concurrent callers into one in-flight request
 
 function normalize(str) {
   return (str ?? "")
@@ -44,22 +54,31 @@ function normalize(str) {
 
 async function fetchAllPoses() {
   if (allPosesCache) return allPosesCache;
-  if (fetchAttempted) return null; // already tried once this session and failed, don't retry every call
-  fetchAttempted = true;
+  if (fetchInFlight) return fetchInFlight; // already fetching — wait on that instead of starting a second request
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000); // free-tier host may need to "wake up"
-    const res = await fetch(`${BASE_URL}/poses`, { signal: controller.signal });
-    clearTimeout(timeout);
+  const sinceLastAttempt = Date.now() - lastFetchAttemptAt;
+  if (lastFetchAttemptAt !== 0 && sinceLastAttempt < RETRY_COOLDOWN_MS) return null; // recent failure — don't hammer it, but don't give up forever either
 
-    if (!res.ok) return null;
-    const data = await res.json();
-    allPosesCache = Array.isArray(data) ? data : null;
-    return allPosesCache;
-  } catch {
-    return null;
-  }
+  lastFetchAttemptAt = Date.now();
+  fetchInFlight = (async () => {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+      const res = await fetch(`${BASE_URL}/poses`, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!res.ok) return null;
+      const data = await res.json();
+      allPosesCache = Array.isArray(data) ? data : null;
+      return allPosesCache;
+    } catch {
+      return null;
+    } finally {
+      fetchInFlight = null;
+    }
+  })();
+
+  return fetchInFlight;
 }
 
 // Finds the best match for one of our poses against the API's real pose
@@ -88,19 +107,21 @@ function findBestMatch(poses, sanskritName, englishName) {
   return null;
 }
 
-const resultCache = {}; // { poseId: url | null }
+const resultCache = {}; // { poseId: url | null } — only for genuine "not in the dataset" results
 
 export async function getPoseImage(poseId, sanskritName, englishName) {
   if (poseId in resultCache) return resultCache[poseId];
 
   const allPoses = await fetchAllPoses();
   if (!allPoses) {
-    resultCache[poseId] = null;
+    // API unreachable or still waking up — don't cache this. A later
+    // call (next pose opened, or a retry after the cooldown) may
+    // succeed once it's actually up, instead of staying blank forever.
     return null;
   }
 
   const match = findBestMatch(allPoses, sanskritName, englishName);
   const url = match?.url_png ?? match?.url_svg ?? null;
-  resultCache[poseId] = url;
+  resultCache[poseId] = url; // safe to cache permanently now — the dataset itself won't change mid-session
   return url;
 }

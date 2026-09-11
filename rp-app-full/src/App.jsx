@@ -13,6 +13,8 @@ import RestTimer from "./RestTimer.jsx";
 import YogaLibrary from "./YogaLibrary.jsx";
 import { exportMesocycleAsPDF } from "./exportMesocycle.js";
 import { autoregulateNextWeek, summarizeAdjustments } from "./autoregulate.js";
+import { computeFatigueSignals } from "./fatigueSignals.js";
+import FatigueBanner from "./FatigueBanner.jsx";
 import { personalRecords, findNewPRs } from "./stats.js";
 import { aiClient } from "./aiClient.js";
 import VoiceInputButton from "./VoiceInputButton.jsx";
@@ -86,6 +88,24 @@ const s = {
   },
   empty: { color: "#666", fontSize: 13, fontStyle: "italic" },
   setRow: { display: "flex", gap: 6, marginBottom: 6 },
+  dayPlanCard: {
+    background: "#0f0f0f",
+    border: "1px solid #262626",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+  },
+  dayPlanTitle: { fontSize: 12, fontWeight: 700, color: "#e0c85b", marginBottom: 8 },
+  dayPlanRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+    padding: "8px 0",
+    borderBottom: "1px solid #1e1e1e",
+  },
+  dayPlanExercise: { fontSize: 13, fontWeight: 600, color: "#eee" },
+  dayPlanMeta: { fontSize: 11, color: "#888", marginTop: 2 },
   center: {
     minHeight: "100vh",
     display: "flex",
@@ -198,6 +218,13 @@ const TABS = [
   { id: "warmup", label: "Warm-up" },
   { id: "yoga", label: "Yoga / Off-Day" },
 ];
+
+function formatMuscleLabel(muscle) {
+  return muscle
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
 function Dashboard({ user }) {
   const [tab, setTab] = useState("log");
@@ -389,6 +416,8 @@ function Dashboard({ user }) {
           {queueLength} workout{queueLength > 1 ? "s" : ""} saved offline, waiting to sync...
         </div>
       )}
+
+      {activeMeso && <FatigueBanner signals={computeFatigueSignals(activeMeso, workouts)} />}
 
       <div style={s.tabRow}>
         {TABS.map((t) => (
@@ -584,6 +613,37 @@ function Dashboard({ user }) {
               )}
             </select>
           )}
+
+          {activeMeso?.plan && selectedWeekDay && (() => {
+            const week = activeMeso.plan.weekPlans.find((w) => w.weekIndex === selectedWeekDay.weekIndex);
+            const day = week?.days.find((d) => d.dayIndex === selectedWeekDay.dayIndex);
+            if (!day) return null;
+            return (
+              <div style={s.dayPlanCard}>
+                <div style={s.dayPlanTitle}>
+                  Planned for Week {selectedWeekDay.weekIndex}, Day {selectedWeekDay.dayIndex}
+                  {week.isDeload ? " (deload)" : ""}
+                </div>
+                {day.exercises.length === 0 ? (
+                  <p style={s.empty}>No exercises planned for this day.</p>
+                ) : (
+                  day.exercises.map((ex, i) => (
+                    <div key={i} style={s.dayPlanRow}>
+                      <div>
+                        <div style={s.dayPlanExercise}>{ex.name}</div>
+                        <div style={s.dayPlanMeta}>
+                          {ex.sets} × {ex.reps} @ RIR {ex.rir} · {formatMuscleLabel(ex.muscle)}
+                        </div>
+                      </div>
+                      <button type="button" style={s.smallButton} onClick={() => setExerciseName(ex.name)}>
+                        Log this
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            );
+          })()}
 
           <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8 }}>
             <input
