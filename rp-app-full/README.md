@@ -6,7 +6,7 @@ A personal, RP-style (Renaissance Periodization) hypertrophy training app — me
 
 - **React 18 + Vite** — app shell
 - **Supabase** (Postgres + Auth) — cross-device data sync, magic-link email login
-- **ExerciseDB** (self-hosted, open source) — exercise data: instructions, target muscles, images, GIFs, and video
+- **free-exercise-db** (public domain dataset, fetched directly from GitHub) — exercise data: instructions, target muscles, and step-by-step photos. No deployment needed.
 
 ## Features
 
@@ -24,7 +24,7 @@ A personal, RP-style (Renaissance Periodization) hypertrophy training app — me
 │   ├── App.jsx                # App shell: auth gate, mesocycles, logging, history, tabs
 │   ├── storage.js             # Supabase-backed persistence (mesocycles, workouts, auth)
 │   ├── supabaseClient.js      # Supabase client init
-│   ├── exerciseLibrary.js     # Fetches exercise data from your ExerciseDB deployment
+│   ├── exerciseLibrary.js     # Fetches exercise data from free-exercise-db on GitHub (no deployment needed)
 │   └── ExerciseLibrary.jsx    # Search/browse UI with instructions + media
 ├── scripts/
 │   └── scrub-videos.mjs       # Filters the exercise dataset down to entries with a working video link
@@ -53,12 +53,9 @@ npm install
 
 ### 3. Set up the Exercise Library (optional but recommended)
 
-The exercise library needs its own data source — a self-hosted, open-source ExerciseDB instance:
+The exercise library needs no setup — it fetches directly from [`free-exercise-db`](https://github.com/yuhonas/free-exercise-db), a public-domain dataset hosted on GitHub. No account, no deployment, no API key.
 
-1. Deploy [`cyberboyanmol/exercisedb-api`](https://github.com/cyberboyanmol/exercisedb-api) to Vercel (one-click deploy, MIT licensed, no server to manage).
-2. Copy the resulting deployment URL.
-
-If you skip this step, the app still works for logging and mesocycles — you just won't have the searchable exercise library with photos/videos.
+Trade-off: photos only, no video. If you want video demos later, that requires finding and self-hosting a different, more actively-maintained data source.
 
 ### 4. Environment variables
 
@@ -71,7 +68,6 @@ cp .env.example .env
 ```
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-public-key
-VITE_EXERCISEDB_URL=https://your-exercisedb-deployment.vercel.app
 ```
 
 ### 5. Run it
@@ -114,7 +110,7 @@ Add the same three environment variables in your Vercel project settings.
 - `npm run dev` — local development server
 - `npm run build` — production build
 - `npm run preview` — preview the production build locally
-- `node scripts/scrub-videos.mjs <exercisedb-url>` — checks every exercise in your ExerciseDB deployment for a working video link and writes `verified-exercises.json` / `verified-video-ids.json`. Useful since community-run exercise datasets sometimes have broken media links.
+- `node scripts/scrub-videos.mjs <api-url>` — legacy script for checking video links against a self-hosted ExerciseDB-style API. Not needed for the current free-exercise-db integration, which has no video field; kept in case you switch to a video-inclusive source later.
 
 ## Roadmap
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { exerciseLibrary } from "./exerciseLibrary.js";
+import { exerciseLibrary, EQUIPMENT_OPTIONS } from "./exerciseLibrary.js";
 
 const s = {
   wrap: { marginTop: 8 },
@@ -96,7 +96,38 @@ const s = {
     cursor: "pointer",
     marginTop: 12,
   },
+  equipmentToggleRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  equipmentLink: {
+    background: "none",
+    border: "none",
+    color: "#8a8a8a",
+    fontSize: 12,
+    cursor: "pointer",
+    textDecoration: "underline",
+  },
+  equipmentPanel: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 12,
+  },
 };
+
+const EQUIPMENT_STORAGE_KEY = "rp-workout-app:available-equipment";
+
+function loadSavedEquipment() {
+  try {
+    const raw = localStorage.getItem(EQUIPMENT_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
 
 // This dataset categorizes by primaryMuscles, not body region, so these
 // chips map to the muscle-group terms actually used in the data.
@@ -109,14 +140,26 @@ export default function ExerciseLibrary({ onSelectExercise }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
+  const [selectedEquipment, setSelectedEquipment] = useState(loadSavedEquipment);
+  const [showEquipmentPanel, setShowEquipmentPanel] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(EQUIPMENT_STORAGE_KEY, JSON.stringify(selectedEquipment));
+  }, [selectedEquipment]);
+
+  const toggleEquipment = (item) => {
+    setSelectedEquipment((prev) =>
+      prev.includes(item) ? prev.filter((e) => e !== item) : [...prev, item]
+    );
+  };
 
   const runSearch = async () => {
     setLoading(true);
     setError("");
     try {
       const data = query.trim()
-        ? await exerciseLibrary.searchExercises(query.trim())
-        : await exerciseLibrary.getExercisesByBodyPart(activeGroup);
+        ? await exerciseLibrary.searchExercises(query.trim(), { equipment: selectedEquipment })
+        : await exerciseLibrary.getExercisesByBodyPart(activeGroup, { equipment: selectedEquipment });
       setResults(data);
     } catch (err) {
       setError("Couldn't load the exercise library right now. Try again in a moment.");
@@ -128,7 +171,7 @@ export default function ExerciseLibrary({ onSelectExercise }) {
   useEffect(() => {
     runSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeGroup]);
+  }, [activeGroup, selectedEquipment]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -150,6 +193,36 @@ export default function ExerciseLibrary({ onSelectExercise }) {
           onChange={(e) => setQuery(e.target.value)}
         />
       </form>
+
+      <div style={s.equipmentToggleRow}>
+        <button
+          style={s.equipmentLink}
+          onClick={() => setShowEquipmentPanel((v) => !v)}
+        >
+          {selectedEquipment.length === 0
+            ? "Filter by available equipment"
+            : `Equipment: ${selectedEquipment.length} selected`}
+        </button>
+        {selectedEquipment.length > 0 && (
+          <button style={s.equipmentLink} onClick={() => setSelectedEquipment([])}>
+            Clear
+          </button>
+        )}
+      </div>
+
+      {showEquipmentPanel && (
+        <div style={s.equipmentPanel}>
+          {EQUIPMENT_OPTIONS.map((item) => (
+            <button
+              key={item}
+              style={s.chip(selectedEquipment.includes(item))}
+              onClick={() => toggleEquipment(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      )}
 
       {!query.trim() && (
         <div style={s.bodyPartRow}>

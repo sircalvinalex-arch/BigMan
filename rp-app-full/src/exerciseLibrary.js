@@ -1,4 +1,3 @@
-
 // exerciseLibrary.js
 // Pulls exercise data directly from the free-exercise-db public domain
 // dataset, hosted on GitHub — no backend deployment required.
@@ -33,24 +32,26 @@ function withImageUrls(exercise) {
   };
 }
 
-async function searchExercises(query, { limit = 20 } = {}) {
+async function searchExercises(query, { limit = 20, equipment = [] } = {}) {
   const all = await loadAll();
   const q = query.toLowerCase();
   return all
     .filter((ex) => ex.name.toLowerCase().includes(q))
+    .filter((ex) => equipment.length === 0 || equipment.includes(ex.equipment))
     .slice(0, limit)
     .map(withImageUrls);
 }
 
 // Body part browsing maps onto this dataset's "primaryMuscles" field
 // rather than a bodyPart field, so we match loosely by keyword.
-async function getExercisesByBodyPart(bodyPart, { limit = 30 } = {}) {
+async function getExercisesByBodyPart(bodyPart, { limit = 30, equipment = [] } = {}) {
   const all = await loadAll();
   const q = bodyPart.toLowerCase();
   return all
     .filter((ex) =>
       (ex.primaryMuscles ?? []).some((m) => m.toLowerCase().includes(q))
     )
+    .filter((ex) => equipment.length === 0 || equipment.includes(ex.equipment))
     .slice(0, limit)
     .map(withImageUrls);
 }
@@ -60,6 +61,22 @@ async function getExerciseById(id) {
   const found = all.find((ex) => ex.id === id);
   return found ? withImageUrls(found) : null;
 }
+
+// Equipment values as they appear in the dataset, for building a filter UI.
+export const EQUIPMENT_OPTIONS = [
+  "body only",
+  "dumbbell",
+  "barbell",
+  "cable",
+  "machine",
+  "kettlebells",
+  "bands",
+  "e-z curl bar",
+  "exercise ball",
+  "medicine ball",
+  "foam roll",
+  "other",
+];
 
 export const exerciseLibrary = {
   searchExercises,
