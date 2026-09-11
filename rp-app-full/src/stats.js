@@ -37,18 +37,29 @@ export function personalRecords(workouts) {
 // Given a single newly-logged workout and the PRs from BEFORE that
 // workout, returns which sets in it were new PRs — used to show a
 // celebratory flag right after logging.
+// Given a single newly-logged workout and the PRs from BEFORE that
+// workout, returns which EXERCISES had a new best e1RM in this workout —
+// one entry per exercise (the best set from this session), not one per
+// set. Without deduping like this, three identical sets in one session
+// would each independently "beat" an empty prior record and all get
+// flagged, showing the same PR three times.
 export function findNewPRs(newWorkout, priorRecords) {
-  const newPRs = [];
+  const bestThisWorkout = {}; // { exerciseName: { name, weight, reps, e1rm } }
+
   for (const ex of newWorkout.exercises ?? []) {
     for (const set of ex.sets ?? []) {
       const e1rm = estimatedOneRepMax(set.weight, set.reps);
-      const prior = priorRecords[ex.name];
-      if (!prior || e1rm > prior.e1rm) {
-        newPRs.push({ name: ex.name, weight: set.weight, reps: set.reps, e1rm });
+      const currentBest = bestThisWorkout[ex.name]?.e1rm ?? 0;
+      if (e1rm > currentBest) {
+        bestThisWorkout[ex.name] = { name: ex.name, weight: set.weight, reps: set.reps, e1rm };
       }
     }
   }
-  return newPRs;
+
+  return Object.values(bestThisWorkout).filter((best) => {
+    const priorBest = priorRecords[best.name]?.e1rm ?? 0;
+    return best.e1rm > priorBest;
+  });
 }
 
 // Weekly logged set-volume per muscle group, for charting. Weeks are
