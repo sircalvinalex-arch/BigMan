@@ -3,6 +3,14 @@
 // Pulls a pose illustration (SVG or PNG) from the free, hosted yoga-api
 // project: https://github.com/alexcumplido/yoga-api
 //
+// Rather than guessing a search term per pose and hoping the API's own
+// ?name= endpoint does the fuzzy matching we want (it turned out to be
+// stricter than expected — several reasonable-looking guesses came back
+// empty), this fetches the API's FULL pose list ONCE, caches it, and
+// does the fuzzy name-matching ourselves against the real data. This is
+// more robust since we're matching against actual values instead of
+// guessing what the API expects.
+//
 // IMPORTANT LICENSING NOTE (per that repo's README):
 // - Some images are CC0 (public domain), no attribution needed
 // - Others are sourced from Flaticon and REQUIRE this exact attribution
@@ -23,78 +31,76 @@
 
 const BASE_URL = "https://yoga-api-nzy4.onrender.com/v1";
 
-// Query terms per pose id, matched against the API's "english_name"
-// field (per its docs: "name: english and not sanskrit or adapted").
-// Chosen from the pose's own English name where that's a clean, common
-// term the API is likely to use verbatim; simplified for poses with a
-// more elaborate English name than the API would likely use. Not
-// verified against live data (that API blocks automated browsing tools,
-// though not actual browser fetch calls) — if a query comes back "not
-// found," the pose just shows text-only, same as before this feature
-// existed.
-const POSE_ID_QUERIES = {
-  "childs-pose": "child",
-  "downward-dog": "downward dog",
-  "cat-pose": "cat",
-  "cow-pose": "cow",
-  "pigeon-pose": "pigeon",
-  "cobra-pose": "cobra",
-  "seated-forward-fold": "seated forward bend",
-  "low-lunge": "lunge",
-  "reclined-twist": "reclined twist",
-  "happy-baby": "happy baby",
-  "standing-forward-fold": "standing forward bend",
-  "bound-angle": "butterfly",
-  "thread-the-needle": "thread the needle",
-  "sphinx-pose": "sphinx",
-  "legs-up-wall": "legs up the wall",
-  "mountain-pose": "mountain",
-  "tree-pose": "tree",
-  "warrior-two": "warrior 2",
-  "warrior-one": "warrior 1",
-  "triangle-pose": "triangle",
-  "bridge-pose": "bridge",
-  "camel-pose": "camel",
-  "bow-pose": "bow",
-  "half-lord-of-fishes": "half lord of the fishes",
-  "cow-face-pose": "cow face",
-  "garland-pose": "garland",
-  "chair-pose": "chair",
-  "dolphin-pose": "dolphin",
-  "corpse-pose": "corpse",
-};
+let allPosesCache = null; // the full list fetched from the API, once
+let fetchAttempted = false;
 
-const cache = {}; // { poseId: url | null }
+function normalize(str) {
+  return (str ?? "")
+    .toLowerCase()
+    .replace(/pose|posture|\(.*?\)/g, "") // strip generic filler words
+    .replace(/[^a-z\s]/g, "")
+    .trim();
+}
 
-export async function getPoseImage(poseId) {
-  if (poseId in cache) return cache[poseId];
-
-  const query = POSE_ID_QUERIES[poseId];
-  if (!query) {
-    cache[poseId] = null;
-    return null;
-  }
+async function fetchAllPoses() {
+  if (allPosesCache) return allPosesCache;
+  if (fetchAttempted) return null; // already tried once this session and failed, don't retry every call
+  fetchAttempted = true;
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000); // don't hang forever on a sleeping free-tier API
-    const res = await fetch(`${BASE_URL}/poses?name=${encodeURIComponent(query)}`, {
-      signal: controller.signal,
-    });
+    const timeout = setTimeout(() => controller.abort(), 15000); // free-tier host may need to "wake up"
+    const res = await fetch(`${BASE_URL}/poses`, { signal: controller.signal });
     clearTimeout(timeout);
 
-    if (!res.ok) {
-      cache[poseId] = null;
-      return null;
-    }
-
+    if (!res.ok) return null;
     const data = await res.json();
-    const pose = Array.isArray(data) ? data[0] : data;
-    const url = pose?.url_png ?? pose?.url_svg ?? null;
-    cache[poseId] = url;
-    return url;
+    allPosesCache = Array.isArray(data) ? data : null;
+    return allPosesCache;
   } catch {
-    cache[poseId] = null;
     return null;
   }
+}
+
+// Finds the best match for one of our poses against the API's real pose
+// list, checking both English and Sanskrit names in both directions
+// (their name contains ours, or ours contains theirs) since neither
+// naming convention is guaranteed to match exactly.
+function findBestMatch(poses, sanskritName, englishName) {
+  const targets = [normalize(sanskritName), normalize(englishName)].filter(Boolean);
+
+  for (const pose of poses) {
+    const candidates = [
+      normalize(pose.english_name),
+      normalize(pose.sanskrit_name_adapted),
+      normalize(pose.sanskrit_name),
+    ].filter(Boolean);
+
+    for (const target of targets) {
+      for (const candidate of candidates) {
+        if (!target || !candidate) continue;
+        if (candidate === target || candidate.includes(target) || target.includes(candidate)) {
+          return pose;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+const resultCache = {}; // { poseId: url | null }
+
+export async function getPoseImage(poseId, sanskritName, englishName) {
+  if (poseId in resultCache) return resultCache[poseId];
+
+  const allPoses = await fetchAllPoses();
+  if (!allPoses) {
+    resultCache[poseId] = null;
+    return null;
+  }
+
+  const match = findBestMatch(allPoses, sanskritName, englishName);
+  const url = match?.url_png ?? match?.url_svg ?? null;
+  resultCache[poseId] = url;
+  return url;
 }

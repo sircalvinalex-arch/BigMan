@@ -142,6 +142,7 @@ export default function ExerciseLibrary({ onSelectExercise }) {
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
   const [muscleFunction, setMuscleFunction] = useState(null);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
   const [selectedEquipment, setSelectedEquipment] = useState(loadSavedEquipment);
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false);
   const [mode, setMode] = useState("strength"); // "strength" | "stretching"
@@ -287,7 +288,13 @@ export default function ExerciseLibrary({ onSelectExercise }) {
             {selected.imageUrls?.length > 0 && (
               <div style={s.imageRow}>
                 {selected.imageUrls.map((url, i) => (
-                  <img key={i} style={s.image} src={url} alt={`${selected.name} step ${i + 1}`} />
+                  <img
+                    key={i}
+                    style={{ ...s.image, cursor: "pointer" }}
+                    src={url}
+                    alt={`${selected.name} step ${i + 1}`}
+                    onClick={() => setFullscreenImage(url)}
+                  />
                 ))}
               </div>
             )}
@@ -332,6 +339,18 @@ export default function ExerciseLibrary({ onSelectExercise }) {
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {fullscreenImage && (
+        <div
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 100,
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+          }}
+          onClick={() => setFullscreenImage(null)}
+        >
+          <img src={fullscreenImage} alt="Full screen" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
         </div>
       )}
     </div>

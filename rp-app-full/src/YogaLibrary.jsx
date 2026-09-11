@@ -93,6 +93,7 @@ export default function YogaLibrary() {
   const [activeSeries, setActiveSeries] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageLoading, setImageLoading] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
 
   useEffect(() => {
     if (!selected) {
@@ -100,7 +101,7 @@ export default function YogaLibrary() {
       return;
     }
     setImageLoading(true);
-    getPoseImage(selected.id).then((url) => {
+    getPoseImage(selected.id, selected.sanskritName, selected.englishName).then((url) => {
       setSelectedImage(url);
       setImageLoading(false);
     });
@@ -184,7 +185,8 @@ export default function YogaLibrary() {
               <img
                 src={selectedImage}
                 alt={selected.englishName}
-                style={{ width: "100%", maxWidth: 240, display: "block", margin: "0 auto 12px", background: "#fff", borderRadius: 8, padding: 8 }}
+                style={{ width: "100%", maxWidth: 240, display: "block", margin: "0 auto 12px", background: "#fff", borderRadius: 8, padding: 8, cursor: "pointer" }}
+                onClick={() => setFullscreenImage(selectedImage)}
               />
             )}
 
@@ -239,6 +241,18 @@ export default function YogaLibrary() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {fullscreenImage && (
+        <div
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 100,
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+          }}
+          onClick={() => setFullscreenImage(null)}
+        >
+          <img src={fullscreenImage} alt="Full screen" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", background: "#fff", borderRadius: 8, padding: 16 }} />
         </div>
       )}
     </div>
