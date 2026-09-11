@@ -1,19 +1,7 @@
 // stats.js
-// Pure calculation functions over logged workout history — no I/O.
+// Calculation functions over logged workout history.
 
-import { EXERCISE_POOL } from "./exercisePool.js";
-
-// Reverse lookup: exercise name -> muscle group, built once from the pool.
-const EXERCISE_TO_MUSCLE = {};
-for (const [muscle, exercises] of Object.entries(EXERCISE_POOL)) {
-  for (const ex of exercises) {
-    EXERCISE_TO_MUSCLE[ex.name] = muscle;
-  }
-}
-
-function muscleForExercise(name) {
-  return EXERCISE_TO_MUSCLE[name] ?? "other";
-}
+import { buildMuscleIndex } from "./exercisePool.js";
 
 // Epley formula — a standard, widely-used estimated-1RM approximation.
 // Like any e1RM formula, it's an estimate that gets less accurate above
@@ -74,7 +62,8 @@ function startOfIsoWeek(date) {
   return monday.toISOString().slice(0, 10);
 }
 
-export function volumeByMuscleOverTime(workouts) {
+export async function volumeByMuscleOverTime(workouts) {
+  const muscleIndex = await buildMuscleIndex();
   const byWeek = {}; // { weekStart: { muscle: setCount } }
 
   for (const workout of workouts) {
@@ -82,7 +71,7 @@ export function volumeByMuscleOverTime(workouts) {
     if (!byWeek[week]) byWeek[week] = {};
 
     for (const ex of workout.exercises ?? []) {
-      const muscle = muscleForExercise(ex.name);
+      const muscle = muscleIndex[ex.name] ?? "other";
       const sets = ex.sets?.length ?? 0;
       byWeek[week][muscle] = (byWeek[week][muscle] ?? 0) + sets;
     }

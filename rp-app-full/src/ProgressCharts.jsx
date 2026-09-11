@@ -93,7 +93,12 @@ export default function ProgressCharts() {
   }, []);
 
   const records = useMemo(() => personalRecords(workouts), [workouts]);
-  const volumeData = useMemo(() => volumeByMuscleOverTime(workouts), [workouts]);
+  const [volumeData, setVolumeData] = useState([]);
+
+  useEffect(() => {
+    if (workouts.length === 0) return;
+    volumeByMuscleOverTime(workouts).then(setVolumeData);
+  }, [workouts]);
   const exerciseNames = useMemo(() => loggedExerciseNames(workouts), [workouts]);
   const trendData = useMemo(
     () => (selectedExercise ? e1rmTrendForExercise(workouts, selectedExercise) : []),

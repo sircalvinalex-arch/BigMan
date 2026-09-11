@@ -95,6 +95,13 @@ async function getExerciseById(id) {
   return found ? withImageUrls(found) : null;
 }
 
+// Raw access to the full corrected dataset, for the generator's exercise
+// pool logic — no image URLs attached here since the generator only
+// needs name/equipment/mechanic/muscle metadata, not photos.
+async function getAllExercises() {
+  return loadAll();
+}
+
 // Equipment values as they appear in the dataset, for building a filter UI.
 export const EQUIPMENT_OPTIONS = [
   "body only",
@@ -115,4 +122,5 @@ export const exerciseLibrary = {
   searchExercises,
   getExercisesByBodyPart,
   getExerciseById,
+  getAllExercises,
 };

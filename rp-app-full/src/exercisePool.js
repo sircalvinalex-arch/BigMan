@@ -1,103 +1,156 @@
 // exercisePool.js
 //
-// Curated exercise pool per muscle group, with names matched exactly to
-// the free-exercise-db dataset so they link back into the Exercise Library
-// (photos + instructions) when the generator picks them.
-//
-// "priority" is a rough compound-first ordering used by the generator to
-// pick primary vs accessory movements. "tracks" marks which programming
-// track(s) favor this exercise as a priority pick when a muscle group has
-// multiple viable options — this reflects common program emphasis (e.g.
-// NROLW-style posterior chain focus), not a claim about who "should" do
-// which exercise. Any exercise works for anyone; this only affects what
-// the generator suggests first.
+// Picks exercises for a given muscle group by querying the full
+// free-exercise-db dataset (876 exercises) via exerciseLibrary.js,
+// rather than a small hand-curated list — so the generator has real
+// variety to draw from instead of repeating the same handful of moves
+// every mesocycle.
 
-export const EXERCISE_POOL = {
-  chest: [
-    { name: "Barbell Bench Press - Medium Grip", equipment: "barbell", compound: true },
-    { name: "Barbell Incline Bench Press - Medium Grip", equipment: "barbell", compound: true },
-    { name: "Cable Chest Press", equipment: "cable", compound: true },
-    { name: "Cable Crossover", equipment: "cable", compound: false },
-    { name: "Butterfly", equipment: "machine", compound: false },
-  ],
-  lats: [
-    { name: "Chin-Up", equipment: "body only", compound: true },
-    { name: "Full Range-Of-Motion Lat Pulldown", equipment: "cable", compound: true },
-    { name: "Close-Grip Front Lat Pulldown", equipment: "cable", compound: true },
-    { name: "Elevated Cable Rows", equipment: "cable", compound: true },
-  ],
-  middle_back: [
-    { name: "Bent Over Barbell Row", equipment: "barbell", compound: true },
-    { name: "Bent Over Two-Dumbbell Row", equipment: "dumbbell", compound: true },
-    { name: "Dumbbell Incline Row", equipment: "dumbbell", compound: true },
-    { name: "Leverage High Row", equipment: "machine", compound: true },
-  ],
-  shoulders: [
-    { name: "Barbell Shoulder Press", equipment: "barbell", compound: true },
-    { name: "Arnold Dumbbell Press", equipment: "dumbbell", compound: true },
-    { name: "Alternating Cable Shoulder Press", equipment: "cable", compound: true },
-    { name: "Alternating Deltoid Raise", equipment: "dumbbell", compound: false },
-    { name: "Bent Over Dumbbell Rear Delt Raise With Head On Bench", equipment: "dumbbell", compound: false },
-  ],
-  biceps: [
-    { name: "Barbell Curl", equipment: "barbell", compound: false },
-    { name: "Alternate Incline Dumbbell Curl", equipment: "dumbbell", compound: false },
-    { name: "Cable Preacher Curl", equipment: "cable", compound: false },
-    { name: "Close-Grip EZ Bar Curl", equipment: "e-z curl bar", compound: false },
-  ],
-  triceps: [
-    { name: "Bench Dips", equipment: "body only", compound: true },
-    { name: "Cable Lying Triceps Extension", equipment: "cable", compound: false },
-    { name: "Cable Incline Triceps Extension", equipment: "cable", compound: false },
-  ],
-  quadriceps: [
-    { name: "Barbell Squat", equipment: "barbell", compound: true, tracks: ["female"] },
-    { name: "Barbell Walking Lunge", equipment: "barbell", compound: true },
-    { name: "Barbell Step Ups", equipment: "barbell", compound: true, tracks: ["female"] },
-    { name: "Barbell Full Squat", equipment: "barbell", compound: true },
-  ],
-  hamstrings: [
-    { name: "Good Morning", equipment: "barbell", compound: true, tracks: ["female"] },
-    { name: "Glute Ham Raise", equipment: "machine", compound: true, tracks: ["female"] },
-    { name: "Clean Deadlift", equipment: "barbell", compound: true },
-  ],
-  glutes: [
-    { name: "Barbell Hip Thrust", equipment: "barbell", compound: true, tracks: ["female"] },
-    { name: "Barbell Glute Bridge", equipment: "barbell", compound: true, tracks: ["female"] },
-    { name: "Glute Kickback", equipment: "body only", compound: false, tracks: ["female"] },
-  ],
-  calves: [
-    { name: "Seated Calf Raise", equipment: "machine", compound: false },
-    { name: "Calf Press", equipment: "machine", compound: false },
-    { name: "Calf Raise On A Dumbbell", equipment: "dumbbell", compound: false },
-  ],
-  abdominals: [
-    { name: "Air Bike", equipment: "body only", compound: true },
-    { name: "Barbell Ab Rollout", equipment: "barbell", compound: true },
-    { name: "3/4 Sit-Up", equipment: "body only", compound: false },
-  ],
-  traps: [
-    { name: "Barbell Shrug", equipment: "barbell", compound: false },
-    { name: "Dumbbell Shrug", equipment: "dumbbell", compound: false },
-    { name: "Cable Shrugs", equipment: "cable", compound: false },
-  ],
+import { exerciseLibrary } from "./exerciseLibrary.js";
+
+// Maps our internal muscle-group keys (used throughout the generator,
+// volume landmarks, and stats) to the dataset's primaryMuscles values.
+const MUSCLE_KEY_TO_DATASET = {
+  chest: "chest",
+  lats: "lats",
+  middle_back: "middle back",
+  shoulders: "shoulders",
+  biceps: "biceps",
+  triceps: "triceps",
+  quadriceps: "quadriceps",
+  hamstrings: "hamstrings",
+  glutes: "glutes",
+  calves: "calves",
+  abdominals: "abdominals",
+  traps: "traps",
 };
 
-// Returns exercises for a muscle group, filtered to available equipment
-// and sorted so track-favored + compound movements come first.
-export function pickExercisesForMuscle(muscle, { equipment = [], track = "neutral", count = 2 } = {}) {
-  const pool = EXERCISE_POOL[muscle] ?? [];
-  const available = equipment.length === 0
-    ? pool
-    : pool.filter((ex) => equipment.includes(ex.equipment));
+// Keyword-based track favoritism — reflects common program emphasis
+// (e.g. NROLW-style posterior-chain focus), not a claim about who
+// "should" do which exercise. Any exercise works for anyone; this only
+// affects sort order when a muscle group has many viable options.
+const TRACK_KEYWORDS = {
+  female: ["hip thrust", "glute", "bridge", "good morning", "romanian", "step up", "step-up", "lunge", "kickback"],
+  male: ["bench press", "overhead press", "military press", "pull-up", "pullup", "chin-up", "row", "deadlift"],
+};
 
-  const sorted = [...available].sort((a, b) => {
-    const aFav = a.tracks?.includes(track) ? 1 : 0;
-    const bFav = b.tracks?.includes(track) ? 1 : 0;
-    if (aFav !== bFav) return bFav - aFav;
-    if (a.compound !== b.compound) return a.compound ? -1 : 1;
-    return 0;
+function matchesTrackKeywords(name, track) {
+  const keywords = TRACK_KEYWORDS[track];
+  if (!keywords) return false;
+  const lower = name.toLowerCase();
+  return keywords.some((kw) => lower.includes(kw));
+}
+
+let allExercisesCache = null;
+
+async function getCandidatesForMuscle(muscle, { equipment = [] } = {}) {
+  if (!allExercisesCache) {
+    allExercisesCache = await exerciseLibrary.getAllExercises();
+  }
+  const datasetMuscle = MUSCLE_KEY_TO_DATASET[muscle];
+  if (!datasetMuscle) return [];
+
+  return allExercisesCache.filter((ex) => {
+    const hitsThisMuscle = (ex.primaryMuscles ?? []).includes(datasetMuscle);
+    if (!hitsThisMuscle) return false;
+    if (equipment.length > 0 && !equipment.includes(ex.equipment)) return false;
+    return true;
   });
+}
 
-  return sorted.slice(0, count);
+// Returns a sorted candidate list: track-favored first, then compound
+// movements, then everything else — stable otherwise so results are
+// deterministic given the same inputs (needed for week-to-week rotation
+// to behave predictably rather than randomly).
+function sortCandidates(candidates, track) {
+  return [...candidates].sort((a, b) => {
+    const aFav = matchesTrackKeywords(a.name, track) ? 1 : 0;
+    const bFav = matchesTrackKeywords(b.name, track) ? 1 : 0;
+    if (aFav !== bFav) return bFav - aFav;
+
+    const aCompound = a.mechanic === "compound" ? 1 : 0;
+    const bCompound = b.mechanic === "compound" ? 1 : 0;
+    if (aCompound !== bCompound) return bCompound - aCompound;
+
+    return a.name.localeCompare(b.name); // stable tiebreaker
+  });
+}
+
+// Public helper: given a logged exercise NAME, find which of our internal
+// muscle-group keys it belongs to (reverse of MUSCLE_KEY_TO_DATASET). Used
+// by stats.js to attribute logged volume to a muscle group, and by the
+// substitution picker to find alternatives.
+const DATASET_TO_MUSCLE_KEY = Object.fromEntries(
+  Object.entries(MUSCLE_KEY_TO_DATASET).map(([key, val]) => [val, key])
+);
+
+export async function findMuscleForExercise(name) {
+  if (!allExercisesCache) {
+    allExercisesCache = await exerciseLibrary.getAllExercises();
+  }
+  const found = allExercisesCache.find((ex) => ex.name === name);
+  if (!found) return null;
+  const primary = (found.primaryMuscles ?? [])[0];
+  return DATASET_TO_MUSCLE_KEY[primary] ?? null;
+}
+
+// Returns every candidate exercise for a muscle group (not just the top
+// N) — used by the manual substitution picker, where the person should
+// see the full list rather than only the generator's auto-picks.
+export async function listExercisesForMuscle(muscle, { equipment = [] } = {}) {
+  const candidates = await getCandidatesForMuscle(muscle, { equipment });
+  return sortCandidates(candidates, "neutral").map((ex) => ({
+    name: ex.name,
+    equipment: ex.equipment,
+    compound: ex.mechanic === "compound",
+  }));
+}
+
+// Builds a name -> muscle-key lookup for every exercise in the dataset in
+// one pass — used by stats.js so it doesn't do one lookup per exercise.
+let muscleIndexCache = null;
+export async function buildMuscleIndex() {
+  if (muscleIndexCache) return muscleIndexCache;
+  if (!allExercisesCache) {
+    allExercisesCache = await exerciseLibrary.getAllExercises();
+  }
+  const index = {};
+  for (const ex of allExercisesCache) {
+    const primary = (ex.primaryMuscles ?? [])[0];
+    const muscleKey = DATASET_TO_MUSCLE_KEY[primary];
+    if (muscleKey) index[ex.name] = muscleKey;
+  }
+  muscleIndexCache = index;
+  return index;
+}
+// Picks `count` exercises for a muscle group, given available equipment
+// and a programming track. `weekIndex` rotates which exercises from the
+// top of the sorted candidate pool get used — so week 1 might use Barbell
+// Bench Press while week 3 uses Incline Dumbbell Press, instead of the
+// exact same exercise every single week of the block.
+export async function pickExercisesForMuscle(muscle, {
+  equipment = [],
+  track = "neutral",
+  count = 2,
+  weekIndex = 0,
+} = {}) {
+  const candidates = await getCandidatesForMuscle(muscle, { equipment });
+  if (candidates.length === 0) return [];
+
+  const sorted = sortCandidates(candidates, track);
+
+  // Rotate the starting point through the top slice of the sorted pool
+  // (not the whole pool — we still want mostly-favored exercises, just
+  // not the identical one every week). Cap the rotation window so we
+  // don't rotate into weak, unfavored picks just for variety's sake.
+  const rotationWindow = Math.min(sorted.length, Math.max(count * 3, 6));
+  const pool = sorted.slice(0, rotationWindow);
+  const offset = weekIndex % pool.length;
+  const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
+
+  return rotated.slice(0, count).map((ex) => ({
+    name: ex.name,
+    equipment: ex.equipment,
+    compound: ex.mechanic === "compound",
+  }));
 }

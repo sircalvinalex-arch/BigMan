@@ -2,7 +2,9 @@
 //
 // Builds a full mesocycle: a week-by-week, day-by-day plan with exercises,
 // target sets, and rep/RIR ranges — using the volume landmarks and
-// exercise pool as inputs.
+// exercise pool as inputs. Async because exercise selection now queries
+// the full exercise dataset (fetched from GitHub) rather than a small
+// hardcoded list.
 
 import { VOLUME_LANDMARKS, targetSetsForWeek } from "./volumeLandmarks.js";
 import { pickExercisesForMuscle } from "./exercisePool.js";
@@ -46,7 +48,7 @@ function repRangeForWeek(weekIndex, totalWeeks) {
   return { reps: "8-12", rir };
 }
 
-export function generateMesocycle({
+export async function generateMesocycle({
   name,
   weeks = 5,
   daysPerWeek = 4,
@@ -61,32 +63,40 @@ export function generateMesocycle({
 
   for (let weekIndex = 0; weekIndex < weeks; weekIndex++) {
     const { reps, rir } = repRangeForWeek(weekIndex, weeks);
-    const days = split.map((muscles, dayIndex) => {
-      const dayEquipment = equipmentByDay?.[dayIndex] ?? equipment;
 
-      const exercises = muscles.map((muscle) => {
-        const totalSets = targetSetsForWeek(landmarks, muscle, weekIndex, weeks);
-        // Split the muscle's weekly sets across however many days train it
-        const daysHittingThisMuscle = split.filter((d) => d.includes(muscle)).length;
-        const setsThisDay = Math.max(1, Math.round(totalSets / daysHittingThisMuscle));
+    const days = await Promise.all(
+      split.map(async (muscles, dayIndex) => {
+        const dayEquipment = equipmentByDay?.[dayIndex] ?? equipment;
 
-        const picks = pickExercisesForMuscle(muscle, {
-          equipment: dayEquipment,
-          track,
-          count: setsThisDay > 6 ? 2 : 1, // split heavier volume across 2 exercises
-        });
+        const exercisesPerMuscle = await Promise.all(
+          muscles.map(async (muscle) => {
+            const totalSets = targetSetsForWeek(landmarks, muscle, weekIndex, weeks);
+            // Split the muscle's weekly sets across however many days train it
+            const daysHittingThisMuscle = split.filter((d) => d.includes(muscle)).length;
+            const setsThisDay = Math.max(1, Math.round(totalSets / daysHittingThisMuscle));
 
-        return picks.map((ex, i) => ({
-          muscle,
-          name: ex.name,
-          sets: i === 0 ? Math.ceil(setsThisDay / picks.length) : Math.floor(setsThisDay / picks.length),
-          reps,
-          rir,
-        })).filter((e) => e.sets > 0);
-      }).flat();
+            const picks = await pickExercisesForMuscle(muscle, {
+              equipment: dayEquipment,
+              track,
+              count: setsThisDay > 6 ? 2 : 1, // split heavier volume across 2 exercises
+              weekIndex, // rotates which exercise gets picked week to week
+            });
 
-      return { dayIndex: dayIndex + 1, exercises };
-    });
+            return picks
+              .map((ex, i) => ({
+                muscle,
+                name: ex.name,
+                sets: i === 0 ? Math.ceil(setsThisDay / picks.length) : Math.floor(setsThisDay / picks.length),
+                reps,
+                rir,
+              }))
+              .filter((e) => e.sets > 0);
+          })
+        );
+
+        return { dayIndex: dayIndex + 1, exercises: exercisesPerMuscle.flat() };
+      })
+    );
 
     weekPlans.push({ weekIndex: weekIndex + 1, isDeload: weekIndex === weeks - 1, days });
   }

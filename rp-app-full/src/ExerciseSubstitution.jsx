@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { EXERCISE_POOL } from "./exercisePool.js";
+import { findMuscleForExercise, listExercisesForMuscle } from "./exercisePool.js";
 
 const s = {
   trigger: {
@@ -50,30 +50,38 @@ const s = {
     cursor: "pointer",
     marginTop: 8,
   },
+  empty: { color: "#888", fontSize: 13 },
 };
-
-// Finds which muscle group a given exercise name belongs to, so we can
-// offer alternatives from the same pool even if the caller doesn't know
-// the muscle group up front (e.g. a manually-typed exercise name).
-function findMuscleGroup(exerciseName) {
-  for (const [muscle, exercises] of Object.entries(EXERCISE_POOL)) {
-    if (exercises.some((ex) => ex.name === exerciseName)) return muscle;
-  }
-  return null;
-}
 
 export default function ExerciseSubstitution({ currentExercise, onSubstitute }) {
   const [open, setOpen] = useState(false);
-  const muscle = findMuscleGroup(currentExercise);
-  const alternatives = muscle
-    ? EXERCISE_POOL[muscle].filter((ex) => ex.name !== currentExercise)
-    : [];
+  const [loading, setLoading] = useState(false);
+  const [alternatives, setAlternatives] = useState([]);
+  const [notFound, setNotFound] = useState(false);
+
+  const handleOpen = async () => {
+    setOpen(true);
+    setLoading(true);
+    setNotFound(false);
+    try {
+      const muscle = await findMuscleForExercise(currentExercise);
+      if (!muscle) {
+        setNotFound(true);
+        setAlternatives([]);
+        return;
+      }
+      const all = await listExercisesForMuscle(muscle);
+      setAlternatives(all.filter((ex) => ex.name !== currentExercise));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!currentExercise) return null;
 
   return (
     <>
-      <button style={s.trigger} onClick={() => setOpen(true)} type="button">
+      <button style={s.trigger} onClick={handleOpen} type="button">
         Swap exercise
       </button>
 
@@ -81,12 +89,20 @@ export default function ExerciseSubstitution({ currentExercise, onSubstitute }) 
         <div style={s.overlay} onClick={() => setOpen(false)}>
           <div style={s.sheet} onClick={(e) => e.stopPropagation()}>
             <div style={s.title}>Swap "{currentExercise}"</div>
-            {alternatives.length === 0 && (
-              <p style={{ color: "#888", fontSize: 13 }}>
-                No known alternatives for this exercise — it may not be in the curated pool.
-                Try the Exercise Library to search manually.
+
+            {loading && <p style={s.empty}>Finding alternatives...</p>}
+
+            {!loading && notFound && (
+              <p style={s.empty}>
+                Couldn't identify this exercise's muscle group — it may be misspelled,
+                or not in the dataset. Try the Exercise Library to search manually.
               </p>
             )}
+
+            {!loading && !notFound && alternatives.length === 0 && (
+              <p style={s.empty}>No other exercises found for this muscle group.</p>
+            )}
+
             {alternatives.map((alt) => (
               <div
                 key={alt.name}

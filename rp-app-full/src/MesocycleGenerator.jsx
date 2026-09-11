@@ -80,6 +80,8 @@ export default function MesocycleGenerator({ onSaved }) {
   const [equipmentByDay, setEquipmentByDay] = useState({}); // { [dayIndex]: string[] }
   const [plan, setPlan] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState("");
 
   const toggleEquipment = (item) => {
     setEquipment((prev) => (prev.includes(item) ? prev.filter((e) => e !== item) : [...prev, item]));
@@ -93,19 +95,27 @@ export default function MesocycleGenerator({ onSaved }) {
     });
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!track) return;
-    const generated = generateMesocycle({
-      name: name.trim() || "Untitled Mesocycle",
-      weeks: Number(weeks),
-      daysPerWeek: Number(daysPerWeek),
-      track,
-      equipment: perDayEquipment ? [] : equipment,
-      equipmentByDay: perDayEquipment
-        ? Array.from({ length: Number(daysPerWeek) }, (_, i) => equipmentByDay[i] ?? [])
-        : null,
-    });
-    setPlan(generated);
+    setGenerating(true);
+    setGenerateError("");
+    try {
+      const generated = await generateMesocycle({
+        name: name.trim() || "Untitled Mesocycle",
+        weeks: Number(weeks),
+        daysPerWeek: Number(daysPerWeek),
+        track,
+        equipment: perDayEquipment ? [] : equipment,
+        equipmentByDay: perDayEquipment
+          ? Array.from({ length: Number(daysPerWeek) }, (_, i) => equipmentByDay[i] ?? [])
+          : null,
+      });
+      setPlan(generated);
+    } catch (err) {
+      setGenerateError(err.message || "Couldn't generate a plan — check your connection and try again.");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const handleSave = async () => {
@@ -217,9 +227,12 @@ export default function MesocycleGenerator({ onSaved }) {
           </div>
         )}
 
-        <button style={s.button} onClick={handleGenerate} disabled={!track}>
-          {track ? "Generate mesocycle" : "Pick a track first"}
+        <button style={s.button} onClick={handleGenerate} disabled={!track || generating}>
+          {generating ? "Generating..." : track ? "Generate mesocycle" : "Pick a track first"}
         </button>
+        {generateError && (
+          <p style={{ color: "#e07a7a", fontSize: 12, marginTop: 8 }}>{generateError}</p>
+        )}
       </div>
 
       {plan && (
