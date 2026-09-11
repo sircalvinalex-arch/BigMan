@@ -2,6 +2,7 @@ import { useState } from "react";
 import { generateMesocycle, SPLIT_TEMPLATES } from "./generator.js";
 import { EQUIPMENT_OPTIONS } from "./exerciseLibrary.js";
 import { storage } from "./storage.js";
+import { getWeekInsight } from "./weekInsights.js";
 
 const s = {
   card: {
@@ -243,10 +244,16 @@ export default function MesocycleGenerator({ onSaved }) {
             MEV toward MRV each week, then deload in the final week.
           </p>
 
-          {plan.weekPlans.map((week) => (
+          {plan.weekPlans.map((week) => {
+            const insight = getWeekInsight(week, plan.weeks, plan.track);
+            return (
             <div key={week.weekIndex} style={s.weekBlock}>
               <div style={s.weekTitle}>
-                Week {week.weekIndex} {week.isDeload ? "(deload)" : ""}
+                Week {week.weekIndex} {week.isDeload ? "(deload)" : ""} — {insight.phase}
+              </div>
+              <div style={{ background: "#0a0a0a", borderRadius: 8, padding: 10, marginBottom: 10 }}>
+                <div style={{ fontSize: 12, color: "#e0c85b", fontWeight: 700, marginBottom: 4 }}>{insight.summary}</div>
+                <p style={{ fontSize: 11, color: "#aaa", lineHeight: 1.5 }}>{insight.detail}</p>
               </div>
               {week.days.map((day) => (
                 <div key={day.dayIndex} style={s.dayBlock}>
@@ -259,7 +266,8 @@ export default function MesocycleGenerator({ onSaved }) {
                 </div>
               ))}
             </div>
-          ))}
+            );
+          })}
 
           <button style={s.button} onClick={handleSave} disabled={saving}>
             {saving ? "Saving..." : "Save as a mesocycle"}
