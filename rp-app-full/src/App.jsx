@@ -9,6 +9,7 @@ import MeasurementsTracker from "./MeasurementsTracker.jsx";
 import CalendarView from "./CalendarView.jsx";
 import PlateCalculator from "./PlateCalculator.jsx";
 import RestTimer from "./RestTimer.jsx";
+import YogaLibrary from "./YogaLibrary.jsx";
 import { exportMesocycleAsPDF } from "./exportMesocycle.js";
 import { autoregulateNextWeek, summarizeAdjustments } from "./autoregulate.js";
 import { personalRecords, findNewPRs } from "./stats.js";
@@ -193,6 +194,7 @@ const TABS = [
   { id: "calendar", label: "Calendar" },
   { id: "timer", label: "Rest Timer" },
   { id: "plates", label: "Plates" },
+  { id: "yoga", label: "Yoga / Off-Day" },
 ];
 
 function Dashboard({ user }) {
@@ -433,6 +435,12 @@ function Dashboard({ user }) {
       {tab === "plates" && (
         <div style={s.section}>
           <PlateCalculator />
+        </div>
+      )}
+
+      {tab === "yoga" && (
+        <div style={s.section}>
+          <YogaLibrary />
         </div>
       )}
 

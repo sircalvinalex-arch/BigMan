@@ -136,8 +136,7 @@ function loadSavedEquipment() {
 const MUSCLE_GROUPS = ["chest", "lats", "shoulders", "quadriceps", "biceps", "abdominals"];
 
 export default function ExerciseLibrary({ onSelectExercise }) {
-  const [query, setQuery] = useState("");
-  const [activeGroup, setActiveGroup] = useState(MUSCLE_GROUPS[0]);
+  const [query, setQuery] = useState("");  const [activeGroup, setActiveGroup] = useState(MUSCLE_GROUPS[0]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -145,6 +144,7 @@ export default function ExerciseLibrary({ onSelectExercise }) {
   const [muscleFunction, setMuscleFunction] = useState(null);
   const [selectedEquipment, setSelectedEquipment] = useState(loadSavedEquipment);
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false);
+  const [mode, setMode] = useState("strength"); // "strength" | "stretching"
 
   useEffect(() => {
     localStorage.setItem(EQUIPMENT_STORAGE_KEY, JSON.stringify(selectedEquipment));
@@ -161,8 +161,8 @@ export default function ExerciseLibrary({ onSelectExercise }) {
     setError("");
     try {
       const data = query.trim()
-        ? await exerciseLibrary.searchExercises(query.trim(), { equipment: selectedEquipment })
-        : await exerciseLibrary.getExercisesByBodyPart(activeGroup, { equipment: selectedEquipment });
+        ? await exerciseLibrary.searchExercises(query.trim(), { equipment: selectedEquipment, category: mode === "stretching" ? "stretching" : null })
+        : await exerciseLibrary.getExercisesByBodyPart(activeGroup, { equipment: selectedEquipment, category: mode === "stretching" ? "stretching" : null });
       setResults(data);
     } catch (err) {
       setError("Couldn't load the exercise library right now. Try again in a moment.");
@@ -174,7 +174,7 @@ export default function ExerciseLibrary({ onSelectExercise }) {
   useEffect(() => {
     runSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeGroup, selectedEquipment]);
+  }, [activeGroup, selectedEquipment, mode]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -190,6 +190,21 @@ export default function ExerciseLibrary({ onSelectExercise }) {
 
   return (
     <div style={s.wrap}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+        <button
+          style={s.chip(mode === "strength")}
+          onClick={() => setMode("strength")}
+        >
+          Strength
+        </button>
+        <button
+          style={s.chip(mode === "stretching")}
+          onClick={() => setMode("stretching")}
+        >
+          Stretching
+        </button>
+      </div>
+
       <form onSubmit={handleSearchSubmit}>
         <input
           style={s.input}

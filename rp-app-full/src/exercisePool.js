@@ -43,6 +43,12 @@ function matchesTrackKeywords(name, track) {
 
 let allExercisesCache = null;
 
+// Only these categories represent genuine strength training — excludes
+// "stretching" and "cardio", a couple of which the upstream dataset
+// mistakenly tags with mechanic:"compound", which would otherwise let a
+// stretch (e.g. "One Knee To Chest") get picked as a strength exercise.
+const STRENGTH_CATEGORIES = ["strength", "powerlifting", "olympic weightlifting", "strongman"];
+
 async function getCandidatesForMuscle(muscle, { equipment = [] } = {}) {
   if (!allExercisesCache) {
     allExercisesCache = await exerciseLibrary.getAllExercises();
@@ -53,6 +59,7 @@ async function getCandidatesForMuscle(muscle, { equipment = [] } = {}) {
   return allExercisesCache.filter((ex) => {
     const hitsThisMuscle = (ex.primaryMuscles ?? []).includes(datasetMuscle);
     if (!hitsThisMuscle) return false;
+    if (!STRENGTH_CATEGORIES.includes(ex.category)) return false;
     if (equipment.length > 0 && !equipment.includes(ex.equipment)) return false;
     return true;
   });

@@ -65,19 +65,20 @@ function withImageUrls(exercise) {
   };
 }
 
-async function searchExercises(query, { limit = 20, equipment = [] } = {}) {
+async function searchExercises(query, { limit = 20, equipment = [], category = null } = {}) {
   const all = await loadAll();
   const q = query.toLowerCase();
   return all
     .filter((ex) => ex.name.toLowerCase().includes(q))
     .filter((ex) => equipment.length === 0 || equipment.includes(ex.equipment))
+    .filter((ex) => !category || ex.category === category)
     .slice(0, limit)
     .map(withImageUrls);
 }
 
 // Body part browsing maps onto this dataset's "primaryMuscles" field
 // rather than a bodyPart field, so we match loosely by keyword.
-async function getExercisesByBodyPart(bodyPart, { limit = 30, equipment = [] } = {}) {
+async function getExercisesByBodyPart(bodyPart, { limit = 30, equipment = [], category = null } = {}) {
   const all = await loadAll();
   const q = bodyPart.toLowerCase();
   return all
@@ -85,6 +86,7 @@ async function getExercisesByBodyPart(bodyPart, { limit = 30, equipment = [] } =
       (ex.primaryMuscles ?? []).some((m) => m.toLowerCase().includes(q))
     )
     .filter((ex) => equipment.length === 0 || equipment.includes(ex.equipment))
+    .filter((ex) => !category || ex.category === category)
     .slice(0, limit)
     .map(withImageUrls);
 }
