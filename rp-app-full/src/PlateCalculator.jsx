@@ -52,7 +52,9 @@ const s = {
 
 // Standard Olympic plate set (lb and kg), heaviest first, with a rough
 // color mapping for quick visual identification.
-const PLATE_SETS = {
+// Exported so other components (e.g. WarmupCalculator) can show a plate
+// breakdown for a weight without duplicating this table.
+export const PLATE_SETS = {
   lb: [
     { weight: 45, color: "#5b8def" },
     { weight: 35, color: "#e05b5b" },
@@ -72,7 +74,7 @@ const PLATE_SETS = {
   ],
 };
 
-function calculatePlates(targetWeight, barWeight, unit) {
+export function calculatePlates(targetWeight, barWeight, unit) {
   const perSide = (targetWeight - barWeight) / 2;
   if (perSide <= 0) return { plates: [], remainder: 0, perSide: 0 };
 

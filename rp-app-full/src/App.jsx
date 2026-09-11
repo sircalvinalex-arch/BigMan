@@ -8,6 +8,7 @@ import ProgressCharts from "./ProgressCharts.jsx";
 import MeasurementsTracker from "./MeasurementsTracker.jsx";
 import CalendarView from "./CalendarView.jsx";
 import PlateCalculator from "./PlateCalculator.jsx";
+import WarmupCalculator from "./WarmupCalculator.jsx";
 import RestTimer from "./RestTimer.jsx";
 import YogaLibrary from "./YogaLibrary.jsx";
 import { exportMesocycleAsPDF } from "./exportMesocycle.js";
@@ -194,6 +195,7 @@ const TABS = [
   { id: "calendar", label: "Calendar" },
   { id: "timer", label: "Rest Timer" },
   { id: "plates", label: "Plates" },
+  { id: "warmup", label: "Warm-up" },
   { id: "yoga", label: "Yoga / Off-Day" },
 ];
 
@@ -435,6 +437,12 @@ function Dashboard({ user }) {
       {tab === "plates" && (
         <div style={s.section}>
           <PlateCalculator />
+        </div>
+      )}
+
+      {tab === "warmup" && (
+        <div style={s.section}>
+          <WarmupCalculator />
         </div>
       )}
 
