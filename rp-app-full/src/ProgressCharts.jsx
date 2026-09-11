@@ -8,8 +8,8 @@ import { aiClient } from "./aiClient.js";
 
 const s = {
   card: {
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -20,19 +20,19 @@ const s = {
     justifyContent: "space-between",
     fontSize: 13,
     padding: "6px 0",
-    borderBottom: "1px solid #222",
+    borderBottom: "1px solid var(--border)",
   },
   select: {
     width: "100%",
-    background: "#111",
-    border: "1px solid #2a2a2a",
+    background: "var(--input-bg)",
+    border: "1px solid var(--border-strong)",
     borderRadius: 8,
-    color: "#f2f2f2",
+    color: "var(--text)",
     padding: "10px 12px",
     fontSize: 14,
     marginBottom: 12,
   },
-  empty: { color: "#666", fontSize: 13, fontStyle: "italic" },
+  empty: { color: "var(--text-faint)", fontSize: 13, fontStyle: "italic" },
 };
 
 const MUSCLE_COLORS = {
@@ -60,12 +60,12 @@ function CoachingSummary({ workouts }) {
   };
 
   return (
-    <div style={{ ...s.card, borderColor: "#3a3a5a" }}>
+    <div style={{ ...s.card, borderColor: "var(--accent-blue)" }}>
       <div style={s.sectionTitle}>Coaching summary (AI Boost)</div>
       {!summary && !loading && (
         <button
           style={{
-            width: "100%", background: "#e8e8e8", color: "#0a0a0a", border: "none",
+            width: "100%", background: "var(--accent-blue)", color: "var(--on-accent)", border: "none",
             borderRadius: 8, padding: "10px", fontWeight: 700, fontSize: 13, cursor: "pointer",
           }}
           onClick={handleGenerate}
@@ -74,8 +74,8 @@ function CoachingSummary({ workouts }) {
         </button>
       )}
       {loading && <p style={s.empty}>Reading your recent training...</p>}
-      {error && <p style={{ color: "#e07a7a", fontSize: 12 }}>{error}</p>}
-      {summary && <p style={{ fontSize: 13, lineHeight: 1.6, color: "#ddd" }}>{summary}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 12 }}>{error}</p>}
+      {summary && <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text)" }}>{summary}</p>}
     </div>
   );
 }
@@ -138,13 +138,13 @@ export default function ProgressCharts() {
           <div style={s.sectionTitle}>Weekly set volume by muscle group</div>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={volumeData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-              <XAxis dataKey="week" tick={{ fill: "#888", fontSize: 11 }} />
-              <YAxis tick={{ fill: "#888", fontSize: 11 }} />
-              <Tooltip contentStyle={{ background: "#161616", border: "1px solid #262626" }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="week" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
+              <YAxis tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
+              <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               {muscleKeys.map((muscle) => (
-                <Bar key={muscle} dataKey={muscle} stackId="a" fill={MUSCLE_COLORS[muscle] ?? "#888"} />
+                <Bar key={muscle} dataKey={muscle} stackId="a" fill={MUSCLE_COLORS[muscle] ?? "var(--text-muted)"} />
               ))}
             </BarChart>
           </ResponsiveContainer>
@@ -167,11 +167,11 @@ export default function ProgressCharts() {
         {selectedExercise && trendData.length > 0 && (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={trendData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-              <XAxis dataKey="date" tick={{ fill: "#888", fontSize: 11 }} />
-              <YAxis tick={{ fill: "#888", fontSize: 11 }} />
-              <Tooltip contentStyle={{ background: "#161616", border: "1px solid #262626" }} />
-              <Line type="monotone" dataKey="e1rm" stroke="#e8e8e8" strokeWidth={2} dot={{ r: 3 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="date" tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
+              <YAxis tick={{ fill: "var(--text-muted)", fontSize: 11 }} />
+              <Tooltip contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)" }} />
+              <Line type="monotone" dataKey="e1rm" stroke="var(--accent-blue)" strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         )}

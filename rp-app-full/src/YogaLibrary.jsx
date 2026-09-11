@@ -5,16 +5,16 @@ import { getPoseImage } from "./yogaImages.js";
 
 const s = {
   card: {
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
   },
   button: {
     width: "100%",
-    background: "#e8e8e8",
-    color: "#0a0a0a",
+    background: "var(--accent-blue)",
+    color: "var(--on-accent)",
     border: "none",
     borderRadius: 8,
     padding: "12px",
@@ -28,22 +28,22 @@ const s = {
     padding: "6px 12px",
     borderRadius: 999,
     fontSize: 12,
-    border: "1px solid " + (active ? "#e8e8e8" : "#2a2a2a"),
-    background: active ? "#e8e8e8" : "transparent",
-    color: active ? "#0a0a0a" : "#aaa",
+    border: "1px solid " + (active ? "var(--accent-blue)" : "var(--border-strong)"),
+    background: active ? "var(--accent-blue)" : "transparent",
+    color: active ? "var(--bg)" : "var(--text-muted)",
     cursor: "pointer",
   }),
   poseCard: {
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,
     cursor: "pointer",
   },
   poseTitle: { fontWeight: 700, fontSize: 14, marginBottom: 2 },
-  sanskrit: { fontSize: 11, color: "#888", fontStyle: "italic", marginBottom: 4 },
-  meta: { fontSize: 12, color: "#888" },
+  sanskrit: { fontSize: 11, color: "var(--text-muted)", fontStyle: "italic", marginBottom: 4 },
+  meta: { fontSize: 12, color: "var(--text-muted)" },
   detailOverlay: {
     position: "fixed",
     inset: 0,
@@ -55,26 +55,26 @@ const s = {
   detailCard: {
     maxWidth: 480,
     margin: "0 auto",
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 20,
   },
   closeButton: {
     background: "none",
-    border: "1px solid #2a2a2a",
-    color: "#ccc",
+    border: "1px solid var(--border-strong)",
+    color: "var(--text)",
     borderRadius: 8,
     padding: "6px 12px",
     fontSize: 13,
     cursor: "pointer",
     marginBottom: 16,
   },
-  step: { fontSize: 13, color: "#ccc", marginBottom: 6, lineHeight: 1.5 },
-  benefitBox: { background: "#0a0a0a", borderRadius: 8, padding: 10, marginBottom: 10 },
-  cautionBox: { background: "#2a2210", borderRadius: 8, padding: 10, marginBottom: 12 },
-  empty: { color: "#666", fontSize: 13, fontStyle: "italic" },
-  disclosure: { fontSize: 11, color: "#666", lineHeight: 1.5, marginBottom: 16 },
+  step: { fontSize: 13, color: "var(--text)", marginBottom: 6, lineHeight: 1.5 },
+  benefitBox: { background: "var(--bg)", borderRadius: 8, padding: 10, marginBottom: 10 },
+  cautionBox: { background: "var(--accent-gold-bg)", borderRadius: 8, padding: 10, marginBottom: 12 },
+  empty: { color: "var(--text-faint)", fontSize: 13, fontStyle: "italic" },
+  disclosure: { fontSize: 11, color: "var(--text-faint)", lineHeight: 1.5, marginBottom: 16 },
 };
 
 const LOW_RISK_CAUTIONS = new Set([
@@ -120,7 +120,7 @@ export default function YogaLibrary() {
 
       <p style={{ ...s.disclosure, marginBottom: 12 }}>
         Pose illustrations from{" "}
-        <a href="https://github.com/alexcumplido/yoga-api" target="_blank" rel="noreferrer" style={{ color: "#888" }}>
+        <a href="https://github.com/alexcumplido/yoga-api" target="_blank" rel="noreferrer" style={{ color: "var(--text-muted)" }}>
           Yoga API
         </a>{" "}
         by Alexandre C. Some icons: Easy icons created by monkik - Flaticon, Yoga icons created by dDara - Flaticon.
@@ -195,14 +195,14 @@ export default function YogaLibrary() {
             </p>
 
             <div style={s.benefitBox}>
-              <div style={{ fontSize: 11, color: "#7ad67a", fontWeight: 700, marginBottom: 4 }}>Why this helps</div>
-              <p style={{ fontSize: 12, color: "#ccc", lineHeight: 1.5 }}>{selected.benefit}</p>
+              <div style={{ fontSize: 11, color: "var(--accent-green)", fontWeight: 700, marginBottom: 4 }}>Why this helps</div>
+              <p style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.5 }}>{selected.benefit}</p>
             </div>
 
             {selected.caution && !LOW_RISK_CAUTIONS.has(selected.caution) && (
               <div style={s.cautionBox}>
-                <div style={{ fontSize: 11, color: "#e0c85b", fontWeight: 700, marginBottom: 4 }}>Worth knowing</div>
-                <p style={{ fontSize: 12, color: "#ccc", lineHeight: 1.5 }}>{selected.caution}</p>
+                <div style={{ fontSize: 11, color: "var(--accent-gold)", fontWeight: 700, marginBottom: 4 }}>Worth knowing</div>
+                <p style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.5 }}>{selected.caution}</p>
               </div>
             )}
 
@@ -223,7 +223,7 @@ export default function YogaLibrary() {
             <p style={{ ...s.meta, marginBottom: 12 }}>
               {activeSeries.poses.length} poses · {activeSeries.estimatedDuration}
             </p>
-            <p style={{ fontSize: 12, color: "#ccc", lineHeight: 1.5, marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.5, marginBottom: 16 }}>
               {activeSeries.description}
             </p>
             {activeSeries.poses.map((pose, i) => (

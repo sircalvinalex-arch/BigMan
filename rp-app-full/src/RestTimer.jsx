@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 
 const s = {
   card: {
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 16,
     textAlign: "center",
@@ -14,9 +14,9 @@ const s = {
     padding: "8px 12px",
     borderRadius: 8,
     fontSize: 13,
-    border: "1px solid " + (active ? "#e8e8e8" : "#2a2a2a"),
-    background: active ? "#e8e8e8" : "transparent",
-    color: active ? "#0a0a0a" : "#aaa",
+    border: "1px solid " + (active ? "var(--accent-blue)" : "var(--border-strong)"),
+    background: active ? "var(--accent-blue)" : "transparent",
+    color: active ? "var(--bg)" : "var(--text-muted)",
     cursor: "pointer",
   }),
   button: {
@@ -28,8 +28,8 @@ const s = {
     cursor: "pointer",
     marginRight: 8,
   },
-  startButton: { background: "#e8e8e8", color: "#0a0a0a" },
-  resetButton: { background: "transparent", border: "1px solid #2a2a2a", color: "#aaa" },
+  startButton: { background: "var(--accent-blue)", color: "var(--on-accent)" },
+  resetButton: { background: "transparent", border: "1px solid var(--border-strong)", color: "var(--text-muted)" },
 };
 
 const PRESETS = [60, 90, 120, 180];

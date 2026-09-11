@@ -6,25 +6,25 @@ import { getWeekInsight } from "./weekInsights.js";
 
 const s = {
   card: {
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
   },
   input: {
     width: "100%",
-    background: "#111",
-    border: "1px solid #2a2a2a",
+    background: "var(--input-bg)",
+    border: "1px solid var(--border-strong)",
     borderRadius: 8,
-    color: "#f2f2f2",
+    color: "var(--text)",
     padding: "10px 12px",
     fontSize: 14,
     fontFamily: "inherit",
     marginBottom: 8,
   },
   row: { display: "flex", gap: 8, marginBottom: 8 },
-  label: { fontSize: 12, color: "#888", marginBottom: 4 },
+  label: { fontSize: 12, color: "var(--text-muted)", marginBottom: 4 },
   segmented: { display: "flex", gap: 6, marginBottom: 8 },
   segment: (active) => ({
     flex: 1,
@@ -32,25 +32,25 @@ const s = {
     borderRadius: 8,
     fontSize: 13,
     textAlign: "center",
-    border: "1px solid " + (active ? "#e8e8e8" : "#2a2a2a"),
-    background: active ? "#e8e8e8" : "transparent",
-    color: active ? "#0a0a0a" : "#aaa",
+    border: "1px solid " + (active ? "var(--accent-blue)" : "var(--border-strong)"),
+    background: active ? "var(--accent-blue)" : "transparent",
+    color: active ? "var(--bg)" : "var(--text-muted)",
     cursor: "pointer",
   }),
   chip: (active) => ({
     padding: "6px 10px",
     borderRadius: 999,
     fontSize: 12,
-    border: "1px solid " + (active ? "#e8e8e8" : "#2a2a2a"),
-    background: active ? "#e8e8e8" : "transparent",
-    color: active ? "#0a0a0a" : "#aaa",
+    border: "1px solid " + (active ? "var(--accent-blue)" : "var(--border-strong)"),
+    background: active ? "var(--accent-blue)" : "transparent",
+    color: active ? "var(--bg)" : "var(--text-muted)",
     cursor: "pointer",
   }),
   chipRow: { display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 },
   button: {
     width: "100%",
-    background: "#e8e8e8",
-    color: "#0a0a0a",
+    background: "var(--accent-blue)",
+    color: "var(--on-accent)",
     border: "none",
     borderRadius: 8,
     padding: "12px",
@@ -60,15 +60,15 @@ const s = {
   },
   disclosure: {
     fontSize: 11,
-    color: "#666",
+    color: "var(--text-faint)",
     lineHeight: 1.5,
     marginBottom: 12,
   },
   weekBlock: { marginBottom: 16 },
   weekTitle: { fontWeight: 700, fontSize: 14, marginBottom: 6 },
-  dayBlock: { marginBottom: 8, paddingLeft: 8, borderLeft: "2px solid #2a2a2a" },
-  dayTitle: { fontSize: 13, color: "#ccc", marginBottom: 4, fontWeight: 700 },
-  exerciseLine: { fontSize: 12, color: "#aaa", marginBottom: 2 },
+  dayBlock: { marginBottom: 8, paddingLeft: 8, borderLeft: "2px solid var(--border-strong)" },
+  dayTitle: { fontSize: 13, color: "var(--text)", marginBottom: 4, fontWeight: 700 },
+  exerciseLine: { fontSize: 12, color: "var(--text-muted)", marginBottom: 2 },
 };
 
 export default function MesocycleGenerator({ onSaved }) {
@@ -232,7 +232,7 @@ export default function MesocycleGenerator({ onSaved }) {
           {generating ? "Generating..." : track ? "Generate mesocycle" : "Pick a track first"}
         </button>
         {generateError && (
-          <p style={{ color: "#e07a7a", fontSize: 12, marginTop: 8 }}>{generateError}</p>
+          <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{generateError}</p>
         )}
       </div>
 
@@ -251,9 +251,9 @@ export default function MesocycleGenerator({ onSaved }) {
               <div style={s.weekTitle}>
                 Week {week.weekIndex} {week.isDeload ? "(deload)" : ""} — {insight.phase}
               </div>
-              <div style={{ background: "#0a0a0a", borderRadius: 8, padding: 10, marginBottom: 10 }}>
-                <div style={{ fontSize: 12, color: "#e0c85b", fontWeight: 700, marginBottom: 4 }}>{insight.summary}</div>
-                <p style={{ fontSize: 11, color: "#aaa", lineHeight: 1.5 }}>{insight.detail}</p>
+              <div style={{ background: "var(--bg)", borderRadius: 8, padding: 10, marginBottom: 10 }}>
+                <div style={{ fontSize: 12, color: "var(--accent-gold)", fontWeight: 700, marginBottom: 4 }}>{insight.summary}</div>
+                <p style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>{insight.detail}</p>
               </div>
               {week.days.map((day) => (
                 <div key={day.dayIndex} style={s.dayBlock}>

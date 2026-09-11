@@ -3,8 +3,8 @@ import { storage } from "./storage.js";
 
 const s = {
   card: {
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -12,10 +12,10 @@ const s = {
   sectionTitle: { fontSize: 14, fontWeight: 700, marginBottom: 12 },
   input: {
     width: "100%",
-    background: "#111",
-    border: "1px solid #2a2a2a",
+    background: "var(--input-bg)",
+    border: "1px solid var(--border-strong)",
     borderRadius: 8,
-    color: "#f2f2f2",
+    color: "var(--text)",
     padding: "10px 12px",
     fontSize: 14,
     marginBottom: 8,
@@ -23,8 +23,8 @@ const s = {
   row: { display: "flex", gap: 8, marginBottom: 8 },
   button: {
     width: "100%",
-    background: "#e8e8e8",
-    color: "#0a0a0a",
+    background: "var(--accent-blue)",
+    color: "var(--on-accent)",
     border: "none",
     borderRadius: 8,
     padding: "12px",
@@ -37,12 +37,12 @@ const s = {
     justifyContent: "space-between",
     fontSize: 13,
     padding: "6px 0",
-    borderBottom: "1px solid #222",
+    borderBottom: "1px solid var(--border)",
   },
   photoGrid: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 },
   photo: { width: 100, height: 100, objectFit: "cover", borderRadius: 8 },
-  empty: { color: "#666", fontSize: 13, fontStyle: "italic" },
-  note: { fontSize: 11, color: "#666", marginTop: 8 },
+  empty: { color: "var(--text-faint)", fontSize: 13, fontStyle: "italic" },
+  note: { fontSize: 11, color: "var(--text-faint)", marginTop: 8 },
 };
 
 export default function MeasurementsTracker() {
@@ -142,7 +142,7 @@ export default function MeasurementsTracker() {
           onChange={handlePhotoUpload}
           disabled={uploading}
         />
-        {photoError && <p style={{ color: "#e07a7a", fontSize: 12, marginTop: 8 }}>{photoError}</p>}
+        {photoError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 8 }}>{photoError}</p>}
         <p style={s.note}>
           Requires a one-time Supabase Storage bucket setup — see SETUP.md if uploads fail.
         </p>

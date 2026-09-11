@@ -4,8 +4,8 @@ import { findMuscleForExercise, listExercisesForMuscle } from "./exercisePool.js
 const s = {
   trigger: {
     background: "none",
-    border: "1px solid #2a2a2a",
-    color: "#8a8a8a",
+    border: "1px solid var(--border-strong)",
+    color: "var(--text-faint)",
     borderRadius: 6,
     padding: "4px 10px",
     fontSize: 11,
@@ -21,7 +21,7 @@ const s = {
   },
   sheet: {
     width: "100%",
-    background: "#161616",
+    background: "var(--surface)",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 20,
@@ -32,25 +32,25 @@ const s = {
   option: {
     padding: "12px",
     borderRadius: 8,
-    background: "#111",
-    border: "1px solid #2a2a2a",
+    background: "var(--input-bg)",
+    border: "1px solid var(--border-strong)",
     marginBottom: 8,
     cursor: "pointer",
     fontSize: 14,
   },
-  meta: { fontSize: 11, color: "#888", marginTop: 2 },
+  meta: { fontSize: 11, color: "var(--text-muted)", marginTop: 2 },
   closeButton: {
     width: "100%",
     background: "transparent",
-    border: "1px solid #2a2a2a",
-    color: "#aaa",
+    border: "1px solid var(--border-strong)",
+    color: "var(--text-muted)",
     borderRadius: 8,
     padding: "10px",
     fontSize: 13,
     cursor: "pointer",
     marginTop: 8,
   },
-  empty: { color: "#888", fontSize: 13 },
+  empty: { color: "var(--text-muted)", fontSize: 13 },
 };
 
 export default function ExerciseSubstitution({ currentExercise, onSubstitute }) {

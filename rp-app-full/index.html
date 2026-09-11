@@ -7,7 +7,7 @@
 
     <!-- Add to Home Screen / PWA -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="theme-color" content="#121110" />
 
     <!-- iOS-specific: makes "Add to Home Screen" open full-screen with no
          Safari chrome, and sets the home screen icon + status bar style. -->
@@ -19,8 +19,40 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <style>
+      :root {
+        /* Base surfaces — warm iron-black rather than a generic tech near-black */
+        --bg: #121110;
+        --surface: #1c1a18;
+        --border: #2a2724;
+        --border-strong: #3a3530;
+        --input-bg: #171512;
+
+        /* Text — warm chalk-white rather than clinical pure white */
+        --text: #ece7de;
+        --text-muted: #a39d95;
+        --text-faint: #6b665f;
+
+        /* Brand accent: blue, gold, and a hint of green — pulled from
+           real competition bumper-plate colors (see PlateCalculator.jsx),
+           so the app's identity comes from the sport itself rather than
+           an arbitrary palette choice. */
+        --accent-blue: #3a66c4;   /* primary action / selected state — the 45·25kg plate */
+        --on-accent: #f4f0e6;     /* text placed on top of --accent-blue */
+
+        --accent-gold: #d9a63e;   /* highlights, callouts, achievements — the 25·15kg plate */
+        --accent-gold-bg: #2a2210;
+        --accent-gold-border: #5a4a2a;
+
+        --accent-green: #5fa050;  /* used sparingly — positive/on-track states — the 10kg plate */
+        --accent-green-bg: #16211a;
+        --accent-green-border: #345c34;
+
+        --danger: #c6584a;        /* errors and over-limit warnings — functional, not brand */
+        --danger-bg: #241616;
+        --danger-border: #5a3a3a;
+      }
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { background: #0a0a0a; font-family: 'Sora', system-ui, sans-serif; }
+      html, body { background: var(--bg); font-family: 'Sora', system-ui, sans-serif; }
       /* Respect the iPhone notch / Dynamic Island / home indicator so
          content never sits underneath them. */
       body {

@@ -2,18 +2,18 @@ import { useState } from "react";
 
 const s = {
   card: {
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
   },
   select: {
     width: "100%",
-    background: "#111",
-    border: "1px solid #2a2a2a",
+    background: "var(--input-bg)",
+    border: "1px solid var(--border-strong)",
     borderRadius: 8,
-    color: "#f2f2f2",
+    color: "var(--text)",
     padding: "10px 12px",
     fontSize: 14,
     marginBottom: 12,
@@ -22,17 +22,17 @@ const s = {
   dayCell: (hasWorkout, isDeload) => ({
     aspectRatio: "1",
     borderRadius: 6,
-    background: hasWorkout ? (isDeload ? "#3a3320" : "#1e2f1e") : "#111",
-    border: "1px solid #262626",
+    background: hasWorkout ? (isDeload ? "var(--accent-gold-bg)" : "var(--accent-green-bg)") : "var(--input-bg)",
+    border: "1px solid var(--border)",
     padding: 4,
     fontSize: 10,
-    color: hasWorkout ? "#ccc" : "#555",
+    color: hasWorkout ? "var(--text)" : "var(--text-faint)",
     display: "flex",
     flexDirection: "column",
   }),
   dateNum: { fontWeight: 700, marginBottom: 2 },
-  weekLabel: { fontSize: 9, color: "#888" },
-  empty: { color: "#666", fontSize: 13, fontStyle: "italic" },
+  weekLabel: { fontSize: 9, color: "var(--text-muted)" },
+  empty: { color: "var(--text-faint)", fontSize: 13, fontStyle: "italic" },
 };
 
 const WEEKDAY_LABELS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];

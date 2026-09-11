@@ -2,17 +2,17 @@ import { useMemo, useState } from "react";
 
 const s = {
   card: {
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 16,
   },
   input: {
     width: "100%",
-    background: "#111",
-    border: "1px solid #2a2a2a",
+    background: "var(--input-bg)",
+    border: "1px solid var(--border-strong)",
     borderRadius: 8,
-    color: "#f2f2f2",
+    color: "var(--text)",
     padding: "10px 12px",
     fontSize: 14,
     fontFamily: "inherit",
@@ -25,15 +25,15 @@ const s = {
     borderRadius: 8,
     fontSize: 13,
     textAlign: "center",
-    border: "1px solid " + (active ? "#e8e8e8" : "#2a2a2a"),
-    background: active ? "#e8e8e8" : "transparent",
-    color: active ? "#0a0a0a" : "#aaa",
+    border: "1px solid " + (active ? "var(--accent-blue)" : "var(--border-strong)"),
+    background: active ? "var(--accent-blue)" : "transparent",
+    color: active ? "var(--bg)" : "var(--text-muted)",
     cursor: "pointer",
   }),
   result: {
     marginTop: 12,
     padding: 12,
-    background: "#0a0a0a",
+    background: "var(--bg)",
     borderRadius: 8,
     fontSize: 14,
     textAlign: "center",
@@ -45,9 +45,9 @@ const s = {
     fontSize: 12,
     fontWeight: 700,
     background: color,
-    color: "#0a0a0a",
+    color: "var(--on-accent)",
   }),
-  warning: { color: "#e0b97a", fontSize: 12, marginTop: 8, textAlign: "center" },
+  warning: { color: "var(--accent-gold)", fontSize: 12, marginTop: 8, textAlign: "center" },
 };
 
 // Standard Olympic plate set (lb and kg), heaviest first, with a rough
@@ -132,7 +132,7 @@ export default function PlateCalculator() {
         <div style={s.result}>
           <div>{result.perSide} {unit} per side</div>
           <div style={s.plateRow}>
-            {result.plates.length === 0 && <span style={{ color: "#888" }}>Just the bar</span>}
+            {result.plates.length === 0 && <span style={{ color: "var(--text-muted)" }}>Just the bar</span>}
             {result.plates.map((p) => (
               <div key={p.weight} style={s.plate(p.color)}>
                 {p.weight} × {p.count}

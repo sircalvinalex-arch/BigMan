@@ -7,10 +7,10 @@ const s = {
   wrap: { marginTop: 8 },
   input: {
     width: "100%",
-    background: "#111",
-    border: "1px solid #2a2a2a",
+    background: "var(--input-bg)",
+    border: "1px solid var(--border-strong)",
     borderRadius: 8,
-    color: "#f2f2f2",
+    color: "var(--text)",
     padding: "10px 12px",
     fontSize: 14,
     fontFamily: "inherit",
@@ -28,23 +28,23 @@ const s = {
     padding: "6px 12px",
     borderRadius: 999,
     fontSize: 12,
-    border: "1px solid " + (active ? "#e8e8e8" : "#2a2a2a"),
-    background: active ? "#e8e8e8" : "transparent",
-    color: active ? "#0a0a0a" : "#aaa",
+    border: "1px solid " + (active ? "var(--accent-blue)" : "var(--border-strong)"),
+    background: active ? "var(--accent-blue)" : "transparent",
+    color: active ? "var(--bg)" : "var(--text-muted)",
     cursor: "pointer",
     whiteSpace: "nowrap",
   }),
   card: {
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,
     cursor: "pointer",
   },
   cardTitle: { fontWeight: 700, fontSize: 14, marginBottom: 4 },
-  cardMeta: { fontSize: 12, color: "#888" },
-  empty: { color: "#666", fontSize: 13, fontStyle: "italic" },
+  cardMeta: { fontSize: 12, color: "var(--text-muted)" },
+  empty: { color: "var(--text-faint)", fontSize: 13, fontStyle: "italic" },
   detailOverlay: {
     position: "fixed",
     inset: 0,
@@ -56,15 +56,15 @@ const s = {
   detailCard: {
     maxWidth: 480,
     margin: "0 auto",
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 20,
   },
   closeButton: {
     background: "none",
-    border: "1px solid #2a2a2a",
-    color: "#ccc",
+    border: "1px solid var(--border-strong)",
+    color: "var(--text)",
     borderRadius: 8,
     padding: "6px 12px",
     fontSize: 13,
@@ -82,14 +82,14 @@ const s = {
     height: 140,
     objectFit: "cover",
     borderRadius: 8,
-    background: "#0a0a0a",
+    background: "var(--bg)",
     flexShrink: 0,
   },
-  step: { fontSize: 13, color: "#ccc", marginBottom: 8, lineHeight: 1.5 },
+  step: { fontSize: 13, color: "var(--text)", marginBottom: 8, lineHeight: 1.5 },
   addButton: {
     width: "100%",
-    background: "#e8e8e8",
-    color: "#0a0a0a",
+    background: "var(--accent-blue)",
+    color: "var(--on-accent)",
     border: "none",
     borderRadius: 8,
     padding: "12px",
@@ -107,7 +107,7 @@ const s = {
   equipmentLink: {
     background: "none",
     border: "none",
-    color: "#8a8a8a",
+    color: "var(--text-faint)",
     fontSize: 12,
     cursor: "pointer",
     textDecoration: "underline",
@@ -260,7 +260,7 @@ export default function ExerciseLibrary({ onSelectExercise }) {
       )}
 
       {loading && <p style={s.empty}>Loading exercises...</p>}
-      {error && <p style={{ color: "#e07a7a", fontSize: 13 }}>{error}</p>}
+      {error && <p style={{ color: "var(--danger)", fontSize: 13 }}>{error}</p>}
       {!loading && !error && results.length === 0 && (
         <p style={s.empty}>No exercises found.</p>
       )}
@@ -272,7 +272,7 @@ export default function ExerciseLibrary({ onSelectExercise }) {
             {(ex.primaryMuscles ?? []).join(", ")} {ex.equipment ? `· ${ex.equipment}` : ""}
           </div>
           {ex.mechanic === "compound" && ex.secondaryMuscles?.length > 0 && (
-            <div style={{ ...s.cardMeta, fontSize: 11, color: "#666", marginTop: 2 }}>
+            <div style={{ ...s.cardMeta, fontSize: 11, color: "var(--text-faint)", marginTop: 2 }}>
               Also works: {ex.secondaryMuscles.join(", ")}
             </div>
           )}
@@ -310,15 +310,15 @@ export default function ExerciseLibrary({ onSelectExercise }) {
             )}
 
             {muscleFunction && (
-              <div style={{ background: "#0a0a0a", borderRadius: 8, padding: 10, marginBottom: 10 }}>
-                <div style={{ fontSize: 11, color: "#8ab4e8", fontWeight: 700, marginBottom: 4 }}>What this muscle does</div>
-                <p style={{ fontSize: 12, color: "#ccc", lineHeight: 1.5 }}>{muscleFunction.function}</p>
+              <div style={{ background: "var(--bg)", borderRadius: 8, padding: 10, marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: "var(--accent-blue)", fontWeight: 700, marginBottom: 4 }}>What this muscle does</div>
+                <p style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.5 }}>{muscleFunction.function}</p>
               </div>
             )}
 
-            <div style={{ background: "#0a0a0a", borderRadius: 8, padding: 10, marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: "#7ad67a", fontWeight: 700, marginBottom: 4 }}>In real life</div>
-              <p style={{ fontSize: 12, color: "#ccc", lineHeight: 1.5 }}>{getRealLifeTranslation(selected.name)}</p>
+            <div style={{ background: "var(--bg)", borderRadius: 8, padding: 10, marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "var(--accent-green)", fontWeight: 700, marginBottom: 4 }}>In real life</div>
+              <p style={{ fontSize: 12, color: "var(--text)", lineHeight: 1.5 }}>{getRealLifeTranslation(selected.name)}</p>
             </div>
 
             {(selected.instructions ?? []).map((step, i) => (

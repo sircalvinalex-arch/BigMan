@@ -3,17 +3,17 @@ import { calculatePlates } from "./PlateCalculator.jsx";
 
 const s = {
   card: {
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 16,
   },
   input: {
     width: "100%",
-    background: "#111",
-    border: "1px solid #2a2a2a",
+    background: "var(--input-bg)",
+    border: "1px solid var(--border-strong)",
     borderRadius: 8,
-    color: "#f2f2f2",
+    color: "var(--text)",
     padding: "10px 12px",
     fontSize: 14,
     fontFamily: "inherit",
@@ -26,12 +26,12 @@ const s = {
     borderRadius: 8,
     fontSize: 13,
     textAlign: "center",
-    border: "1px solid " + (active ? "#e8e8e8" : "#2a2a2a"),
-    background: active ? "#e8e8e8" : "transparent",
-    color: active ? "#0a0a0a" : "#aaa",
+    border: "1px solid " + (active ? "var(--accent-blue)" : "var(--border-strong)"),
+    background: active ? "var(--accent-blue)" : "transparent",
+    color: active ? "var(--bg)" : "var(--text-muted)",
     cursor: "pointer",
   }),
-  label: { fontSize: 12, color: "#888", marginBottom: 4 },
+  label: { fontSize: 12, color: "var(--text-muted)", marginBottom: 4 },
   ramp: { marginTop: 12, display: "flex", flexDirection: "column", gap: 6 },
   step: (isWorkingSet) => ({
     display: "flex",
@@ -39,12 +39,12 @@ const s = {
     alignItems: "center",
     padding: "10px 12px",
     borderRadius: 8,
-    background: isWorkingSet ? "#1f2f1f" : "#0a0a0a",
-    border: "1px solid " + (isWorkingSet ? "#3a5a3a" : "#1e1e1e"),
+    background: isWorkingSet ? "var(--accent-green-bg)" : "var(--bg)",
+    border: "1px solid " + (isWorkingSet ? "var(--accent-green-border)" : "var(--border)"),
   }),
   stepLeft: { display: "flex", flexDirection: "column" },
   stepWeight: { fontSize: 15, fontWeight: 700 },
-  stepMeta: { fontSize: 12, color: "#888", marginTop: 2 },
+  stepMeta: { fontSize: 12, color: "var(--text-muted)", marginTop: 2 },
   plateRow: { display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "flex-end", maxWidth: "55%" },
   plate: (color) => ({
     padding: "3px 6px",
@@ -52,9 +52,9 @@ const s = {
     fontSize: 11,
     fontWeight: 700,
     background: color,
-    color: "#0a0a0a",
+    color: "var(--on-accent)",
   }),
-  note: { fontSize: 12, color: "#666", marginTop: 10, lineHeight: 1.5 },
+  note: { fontSize: 12, color: "var(--text-faint)", marginTop: 10, lineHeight: 1.5 },
 };
 
 // Ramp scheme depends on the working set's rep target, not just its
@@ -181,7 +181,7 @@ export default function WarmupCalculator() {
                 </div>
                 <div style={s.plateRow}>
                   {plates.plates.length === 0 ? (
-                    <span style={{ color: "#666", fontSize: 11 }}>bar only</span>
+                    <span style={{ color: "var(--text-faint)", fontSize: 11 }}>bar only</span>
                   ) : (
                     plates.plates.map((p) => (
                       <div key={p.weight} style={s.plate(p.color)}>

@@ -15,6 +15,7 @@ import { exportMesocycleAsPDF } from "./exportMesocycle.js";
 import { autoregulateNextWeek, summarizeAdjustments } from "./autoregulate.js";
 import { computeFatigueSignals } from "./fatigueSignals.js";
 import FatigueBanner from "./FatigueBanner.jsx";
+import BackgroundMotif from "./BackgroundMotif.jsx";
 import { personalRecords, findNewPRs } from "./stats.js";
 import { aiClient } from "./aiClient.js";
 import VoiceInputButton from "./VoiceInputButton.jsx";
@@ -22,34 +23,38 @@ import VoiceInputButton from "./VoiceInputButton.jsx";
 const s = {
   page: {
     minHeight: "100vh",
-    background: "#0a0a0a",
-    color: "#f2f2f2",
+    // Transparent, not var(--bg) — html/body already paint that color
+    // globally, and leaving this opaque would fully occlude the fixed
+    // background motif on any screen close to 480px wide (i.e. every
+    // phone this app actually targets).
+    background: "transparent",
+    color: "var(--text)",
     padding: "24px 16px 80px",
     maxWidth: 480,
     margin: "0 auto",
   },
   h1: { fontSize: 22, fontWeight: 800, marginBottom: 4 },
-  sub: { fontSize: 13, color: "#8a8a8a", marginBottom: 24 },
+  sub: { fontSize: 13, color: "var(--text-faint)", marginBottom: 24 },
   section: { marginBottom: 32 },
   sectionTitle: {
     fontSize: 14,
     fontWeight: 700,
-    color: "#e0e0e0",
+    color: "var(--text)",
     marginBottom: 12,
   },
   card: {
-    background: "#161616",
-    border: "1px solid #262626",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 10,
   },
   input: {
     width: "100%",
-    background: "#111",
-    border: "1px solid #2a2a2a",
+    background: "var(--input-bg)",
+    border: "1px solid var(--border-strong)",
     borderRadius: 8,
-    color: "#f2f2f2",
+    color: "var(--text)",
     padding: "10px 12px",
     fontSize: 14,
     fontFamily: "inherit",
@@ -57,8 +62,8 @@ const s = {
   },
   button: {
     width: "100%",
-    background: "#e8e8e8",
-    color: "#0a0a0a",
+    background: "var(--accent-blue)",
+    color: "var(--on-accent)",
     border: "none",
     borderRadius: 8,
     padding: "12px",
@@ -68,8 +73,8 @@ const s = {
   },
   smallButton: {
     background: "transparent",
-    border: "1px solid #2a2a2a",
-    color: "#aaa",
+    border: "1px solid var(--border-strong)",
+    color: "var(--text-muted)",
     borderRadius: 6,
     padding: "6px 10px",
     fontSize: 11,
@@ -78,42 +83,42 @@ const s = {
   ghostButton: {
     width: "100%",
     background: "transparent",
-    color: "#8a8a8a",
-    border: "1px solid #2a2a2a",
+    color: "var(--text-faint)",
+    border: "1px solid var(--border-strong)",
     borderRadius: 8,
     padding: "10px",
     fontSize: 13,
     cursor: "pointer",
     marginTop: 6,
   },
-  empty: { color: "#666", fontSize: 13, fontStyle: "italic" },
+  empty: { color: "var(--text-faint)", fontSize: 13, fontStyle: "italic" },
   setRow: { display: "flex", gap: 6, marginBottom: 6 },
   dayPlanCard: {
-    background: "#0f0f0f",
-    border: "1px solid #262626",
+    background: "var(--input-bg)",
+    border: "1px solid var(--border)",
     borderRadius: 10,
     padding: 12,
     marginBottom: 10,
   },
-  dayPlanTitle: { fontSize: 12, fontWeight: 700, color: "#e0c85b", marginBottom: 8 },
+  dayPlanTitle: { fontSize: 12, fontWeight: 700, color: "var(--accent-gold)", marginBottom: 8 },
   dayPlanRow: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     gap: 8,
     padding: "8px 0",
-    borderBottom: "1px solid #1e1e1e",
+    borderBottom: "1px solid var(--border)",
   },
-  dayPlanExercise: { fontSize: 13, fontWeight: 600, color: "#eee" },
-  dayPlanMeta: { fontSize: 11, color: "#888", marginTop: 2 },
+  dayPlanExercise: { fontSize: 13, fontWeight: 600, color: "var(--text)" },
+  dayPlanMeta: { fontSize: 11, color: "var(--text-muted)", marginTop: 2 },
   center: {
     minHeight: "100vh",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    background: "#0a0a0a",
-    color: "#f2f2f2",
+    background: "var(--bg)",
+    color: "var(--text)",
     padding: 24,
   },
   tabRow: {
@@ -126,8 +131,8 @@ const s = {
   tabButton: (active) => ({
     flexShrink: 0,
     background: active ? "transparent" : "transparent",
-    color: active ? "#e8e8e8" : "#8a8a8a",
-    border: "1px solid " + (active ? "#e8e8e8" : "#2a2a2a"),
+    color: active ? "var(--accent-blue)" : "var(--text-faint)",
+    border: "1px solid " + (active ? "var(--accent-blue)" : "var(--border-strong)"),
     borderRadius: 8,
     padding: "8px 14px",
     fontSize: 13,
@@ -136,8 +141,8 @@ const s = {
   }),
   prBadge: {
     display: "inline-block",
-    background: "#2a2210",
-    color: "#e0c85b",
+    background: "var(--accent-gold-bg)",
+    color: "var(--accent-gold)",
     fontSize: 10,
     fontWeight: 700,
     padding: "2px 6px",
@@ -145,8 +150,8 @@ const s = {
     marginLeft: 6,
   },
   offlineBanner: {
-    background: "#2a2210",
-    color: "#e0c85b",
+    background: "var(--accent-gold-bg)",
+    color: "var(--accent-gold)",
     fontSize: 12,
     padding: "8px 12px",
     borderRadius: 8,
@@ -198,7 +203,7 @@ function LoginScreen() {
             <button style={s.button} type="submit" disabled={sending}>
               {sending ? "Sending..." : "Send magic link"}
             </button>
-            {error && <p style={{ color: "#e07a7a", fontSize: 13, marginTop: 8 }}>{error}</p>}
+            {error && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 8 }}>{error}</p>}
           </form>
         )}
       </div>
@@ -388,7 +393,7 @@ function Dashboard({ user }) {
         <h1 style={s.h1}>RP Workout</h1>
         <button
           onClick={() => storage.signOut()}
-          style={{ background: "none", border: "none", color: "#888", fontSize: 12, cursor: "pointer" }}
+          style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}
         >
           Sign out
         </button>
@@ -396,16 +401,16 @@ function Dashboard({ user }) {
       <p style={s.sub}>Signed in as {user.email} — synced across your devices.</p>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <span style={{ fontSize: 12, color: "#888" }}>AI Boost {aiBoost ? "on" : "off"}</span>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>AI Boost {aiBoost ? "on" : "off"}</span>
         <button
           onClick={toggleAiBoost}
           style={{
             width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
-            background: aiBoost ? "#4a7a4a" : "#2a2a2a", position: "relative",
+            background: aiBoost ? "var(--accent-green)" : "var(--border-strong)", position: "relative",
           }}
         >
           <div style={{
-            width: 18, height: 18, borderRadius: 9, background: "#e8e8e8", position: "absolute",
+            width: 18, height: 18, borderRadius: 9, background: "var(--text)", position: "absolute",
             top: 3, left: aiBoost ? 23 : 3, transition: "left 0.15s",
           }} />
         </button>
@@ -495,7 +500,7 @@ function Dashboard({ user }) {
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <div>
                 <div style={{ fontWeight: 700 }}>{m.name}</div>
-                <div style={{ fontSize: 12, color: "#888" }}>{m.weeks} weeks</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{m.weeks} weeks</div>
               </div>
               <button
                 onClick={() => handleDeleteMeso(m.id)}
@@ -540,8 +545,8 @@ function Dashboard({ user }) {
         <div style={s.sectionTitle}>Log a workout</div>
 
         {lastPRs.length > 0 && (
-          <div style={{ ...s.card, borderColor: "#e0c85b" }}>
-            <div style={{ fontWeight: 700, color: "#e0c85b", marginBottom: 4 }}>New PR!</div>
+          <div style={{ ...s.card, borderColor: "var(--accent-gold)" }}>
+            <div style={{ fontWeight: 700, color: "var(--accent-gold)", marginBottom: 4 }}>New PR!</div>
             {lastPRs.map((pr, i) => (
               <div key={i} style={{ fontSize: 13 }}>
                 {pr.name}: {pr.weight} × {pr.reps} (~{pr.e1rm} e1RM)
@@ -552,8 +557,8 @@ function Dashboard({ user }) {
 
         <form onSubmit={handleLogWorkout} style={s.card}>
           {aiBoost && (
-            <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid #262626" }}>
-              <div style={{ fontSize: 11, color: "#888", marginBottom: 6 }}>
+            <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid var(--border)" }}>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>
                 AI Boost: describe your set in plain language
               </div>
               <div style={{ display: "flex", gap: 6 }}>
@@ -573,10 +578,10 @@ function Dashboard({ user }) {
                   {nlParsing ? "..." : "Parse"}
                 </button>
               </div>
-              <p style={{ fontSize: 10, color: "#666", marginTop: 4 }}>
+              <p style={{ fontSize: 10, color: "var(--text-faint)", marginTop: 4 }}>
                 On iPhone, use the microphone icon on your keyboard instead — it works directly in this field.
               </p>
-              {nlError && <p style={{ color: "#e07a7a", fontSize: 12, marginTop: 6 }}>{nlError}</p>}
+              {nlError && <p style={{ color: "var(--danger)", fontSize: 12, marginTop: 6 }}>{nlError}</p>}
             </div>
           )}
 
@@ -695,7 +700,7 @@ function Dashboard({ user }) {
         {workouts.map((w) => (
           <div key={w.id} style={s.card}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <div style={{ fontSize: 12, color: "#888" }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
                 {new Date(w.date).toLocaleDateString()}
                 {typeof w.week_index === "number" && ` · Week ${w.week_index}, Day ${w.day_index}`}
               </div>
@@ -712,7 +717,7 @@ function Dashboard({ user }) {
               <div key={i} style={{ marginTop: 8 }}>
                 <div style={{ fontWeight: 700, fontSize: 14 }}>{ex.name}</div>
                 {ex.sets.map((set, si) => (
-                  <div key={si} style={{ fontSize: 13, color: "#aaa" }}>
+                  <div key={si} style={{ fontSize: 13, color: "var(--text-muted)" }}>
                     {set.weight} × {set.reps} {set.rir !== null ? `@ RIR ${set.rir}` : ""}
                   </div>
                 ))}
@@ -736,13 +741,18 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  if (user === undefined) {
-    return (
-      <div style={s.center}>
-        <p style={s.empty}>Loading...</p>
-      </div>
-    );
-  }
-
-  return user ? <Dashboard user={user} /> : <LoginScreen />;
+  return (
+    <>
+      <BackgroundMotif />
+      {user === undefined ? (
+        <div style={s.center}>
+          <p style={s.empty}>Loading...</p>
+        </div>
+      ) : user ? (
+        <Dashboard user={user} />
+      ) : (
+        <LoginScreen />
+      )}
+    </>
+  );
 }

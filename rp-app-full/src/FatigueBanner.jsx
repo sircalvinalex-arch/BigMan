@@ -1,9 +1,9 @@
 import { useState } from "react";
 
 const SEVERITY_STYLE = {
-  3: { border: "#5a3a3a", bg: "#241616" },
-  2: { border: "#5a4a2a", bg: "#241f14" },
-  1: { border: "#3a4a3a", bg: "#161e16" },
+  3: { border: "var(--danger-border)", bg: "var(--danger-bg)" },
+  2: { border: "var(--accent-gold-border)", bg: "var(--accent-gold-bg)" },
+  1: { border: "var(--accent-green-border)", bg: "var(--accent-green-bg)" },
 };
 
 const SEVERITY_HEADLINE = {
@@ -15,8 +15,8 @@ const SEVERITY_HEADLINE = {
 const s = {
   wrap: (severity) => ({
     borderRadius: 12,
-    border: `1px solid ${SEVERITY_STYLE[severity]?.border ?? "#333"}`,
-    background: SEVERITY_STYLE[severity]?.bg ?? "#161616",
+    border: `1px solid ${SEVERITY_STYLE[severity]?.border ?? "var(--border)"}`,
+    background: SEVERITY_STYLE[severity]?.bg ?? "var(--surface)",
     padding: "12px 14px",
     marginBottom: 16,
   }),
@@ -27,8 +27,8 @@ const s = {
     cursor: "pointer",
   },
   headline: { fontSize: 13, fontWeight: 700 },
-  toggle: { fontSize: 12, color: "#999" },
-  note: { fontSize: 13, color: "#ddd", lineHeight: 1.5, marginTop: 8 },
+  toggle: { fontSize: 12, color: "var(--text-muted)" },
+  note: { fontSize: 13, color: "var(--text)", lineHeight: 1.5, marginTop: 8 },
   list: { marginTop: 10, display: "flex", flexDirection: "column", gap: 8 },
 };
 
