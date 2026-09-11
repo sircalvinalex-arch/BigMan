@@ -12,6 +12,38 @@ const DATA_URL =
 const IMAGE_BASE =
   "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
 
+// The upstream dataset mistags some exercises as "body only" (truly
+// no-equipment) when they actually require a bench, step, or other prop
+// to perform — meaning they'd wrongly show up when someone filters to
+// "I only have my body." This corrects those known cases. Add more here
+// if you spot others; each entry overrides just the "equipment" field.
+const EQUIPMENT_CORRECTIONS = {
+  "Bench Dips": "other",
+  "Bench Jump": "other",
+  "Crunch - Legs On Exercise Ball": "exercise ball",
+  "Decline Crunch": "other",
+  "Decline Oblique Crunch": "other",
+  "Decline Reverse Crunch": "other",
+  "Flat Bench Leg Pull-In": "other",
+  "Flat Bench Lying Leg Raise": "other",
+  "Incline Push-Up": "other",
+  "Incline Push-Up Close-Grip": "other",
+  "Incline Push-Up Medium": "other",
+  "Incline Push-Up Reverse Grip": "other",
+  "Incline Push-Up Wide": "other",
+  "Seated Flat Bench Leg Pull-In": "other",
+  "Step-up with Knee Raise": "other",
+  "V-Bar Pullup": "other",
+  // NOT corrected: "Hyperextensions With No Hyperextension Bench" — the
+  // name means it's the variant designed to NOT need a bench, so "body
+  // only" is actually correct there despite matching the word "bench".
+};
+
+function applyCorrections(exercise) {
+  const corrected = EQUIPMENT_CORRECTIONS[exercise.name];
+  return corrected ? { ...exercise, equipment: corrected } : exercise;
+}
+
 // The full dataset is ~800 exercises in one JSON file — small enough to
 // fetch once and cache in memory for the session rather than re-fetching
 // on every search.
@@ -21,7 +53,8 @@ async function loadAll() {
   if (cache) return cache;
   const res = await fetch(DATA_URL);
   if (!res.ok) throw new Error(`Failed to load exercise data: ${res.status}`);
-  cache = await res.json();
+  const raw = await res.json();
+  cache = raw.map(applyCorrections);
   return cache;
 }
 
