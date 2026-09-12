@@ -16,6 +16,7 @@ import { autoregulateNextWeek, summarizeAdjustments } from "./autoregulate.js";
 import { computeFatigueSignals } from "./fatigueSignals.js";
 import FatigueBanner from "./FatigueBanner.jsx";
 import BackgroundMotif from "./BackgroundMotif.jsx";
+import ExerciseDetailSheet from "./ExerciseDetailSheet.jsx";
 import { personalRecords, findNewPRs } from "./stats.js";
 import { aiClient } from "./aiClient.js";
 import VoiceInputButton from "./VoiceInputButton.jsx";
@@ -92,6 +93,7 @@ const s = {
     marginTop: 6,
   },
   empty: { color: "var(--text-faint)", fontSize: 13, fontStyle: "italic" },
+  subTabRow: { display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" },
   setRow: { display: "flex", gap: 6, marginBottom: 6 },
   dayPlanCard: {
     background: "var(--input-bg)",
@@ -212,16 +214,28 @@ function LoginScreen() {
 }
 
 const TABS = [
-  { id: "log", label: "Train" },
-  { id: "library", label: "Exercise Library" },
-  { id: "generate", label: "Generate" },
+  { id: "train", label: "Train" },
   { id: "progress", label: "Progress" },
-  { id: "measurements", label: "Measurements" },
+  { id: "tools", label: "Tools" },
+  { id: "yoga", label: "Yoga / Off-Day" },
+];
+
+const TRAIN_SUB_TABS = [
+  { id: "log", label: "Log" },
+  { id: "generate", label: "Generate" },
+  { id: "library", label: "Library" },
   { id: "calendar", label: "Calendar" },
+];
+
+const PROGRESS_SUB_TABS = [
+  { id: "charts", label: "Charts" },
+  { id: "measurements", label: "Measurements" },
+];
+
+const TOOLS_SUB_TABS = [
   { id: "timer", label: "Rest Timer" },
   { id: "plates", label: "Plates" },
   { id: "warmup", label: "Warm-up" },
-  { id: "yoga", label: "Yoga / Off-Day" },
 ];
 
 function formatMuscleLabel(muscle) {
@@ -246,6 +260,10 @@ function Dashboard({ user }) {
   const [sets, setSets] = useState([{ weight: "", reps: "", rir: "" }]);
   const [activeMesoId, setActiveMesoId] = useState("");
   const [selectedWeekDay, setSelectedWeekDay] = useState(null); // { weekIndex, dayIndex }
+  const [detailExercise, setDetailExercise] = useState(null); // { exercise, planContext } | null
+  const [trainSubTab, setTrainSubTab] = useState(null); // null = use the smart default below
+  const [progressSubTab, setProgressSubTab] = useState("charts");
+  const [toolsSubTab, setToolsSubTab] = useState("timer");
   const [aiBoost, setAiBoost] = useState(aiClient.isAiBoostEnabled());
   const [nlText, setNlText] = useState("");
   const [nlParsing, setNlParsing] = useState(false);
@@ -271,6 +289,11 @@ function Dashboard({ user }) {
   }, []);
 
   const activeMeso = mesocycles.find((m) => m.id === activeMesoId);
+
+  // Smart default: land on Log if there's already an active mesocycle to
+  // train from, otherwise land on Generate since there's nothing to log
+  // yet. Only applies until the person picks a sub-tab themselves.
+  const effectiveTrainSubTab = trainSubTab ?? (activeMeso?.plan ? "log" : "generate");
 
   const handleCreateMeso = async (e) => {
     e.preventDefault();
@@ -432,61 +455,35 @@ function Dashboard({ user }) {
         ))}
       </div>
 
-      {tab === "generate" && (
-        <div style={s.section}>
-          <MesocycleGenerator onSaved={refresh} />
-        </div>
-      )}
+      {tab === "train" && (
+        <>
+          <div style={s.subTabRow}>
+            {TRAIN_SUB_TABS.map((t) => (
+              <button key={t.id} style={s.tabButton(effectiveTrainSubTab === t.id)} onClick={() => setTrainSubTab(t.id)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
 
-      {tab === "library" && (
-        <div style={s.section}>
-          <ExerciseLibrary onSelectExercise={(name) => { setExerciseName(name); setTab("log"); }} />
-        </div>
-      )}
+          {effectiveTrainSubTab === "generate" && (
+            <div style={s.section}>
+              <MesocycleGenerator onSaved={refresh} />
+            </div>
+          )}
 
-      {tab === "progress" && (
-        <div style={s.section}>
-          <ProgressCharts />
-        </div>
-      )}
+          {effectiveTrainSubTab === "library" && (
+            <div style={s.section}>
+              <ExerciseLibrary onSelectExercise={(name) => { setExerciseName(name); setTrainSubTab("log"); }} />
+            </div>
+          )}
 
-      {tab === "measurements" && (
-        <div style={s.section}>
-          <MeasurementsTracker />
-        </div>
-      )}
+          {effectiveTrainSubTab === "calendar" && (
+            <div style={s.section}>
+              <CalendarView mesocycles={mesocycles} />
+            </div>
+          )}
 
-      {tab === "calendar" && (
-        <div style={s.section}>
-          <CalendarView mesocycles={mesocycles} />
-        </div>
-      )}
-
-      {tab === "timer" && (
-        <div style={s.section}>
-          <RestTimer />
-        </div>
-      )}
-
-      {tab === "plates" && (
-        <div style={s.section}>
-          <PlateCalculator />
-        </div>
-      )}
-
-      {tab === "warmup" && (
-        <div style={s.section}>
-          <WarmupCalculator />
-        </div>
-      )}
-
-      {tab === "yoga" && (
-        <div style={s.section}>
-          <YogaLibrary />
-        </div>
-      )}
-
-      {tab === "log" && (
+          {effectiveTrainSubTab === "log" && (
       <>
       <div style={s.section}>
         <div style={s.sectionTitle}>Mesocycles</div>
@@ -634,7 +631,15 @@ function Dashboard({ user }) {
                 ) : (
                   day.exercises.map((ex, i) => (
                     <div key={i} style={s.dayPlanRow}>
-                      <div>
+                      <div
+                        style={{ cursor: "pointer" }}
+                        onClick={() =>
+                          setDetailExercise({
+                            exercise: ex,
+                            planContext: { meso: activeMeso, weekIndex: selectedWeekDay.weekIndex, dayIndex: selectedWeekDay.dayIndex, exerciseIndex: i },
+                          })
+                        }
+                      >
                         <div style={s.dayPlanExercise}>{ex.name}</div>
                         <div style={s.dayPlanMeta}>
                           {ex.sets} × {ex.reps} @ RIR {ex.rir} · {formatMuscleLabel(ex.muscle)}
@@ -727,6 +732,78 @@ function Dashboard({ user }) {
         ))}
       </div>
       </>
+      )}
+        </>
+      )}
+
+      {tab === "progress" && (
+        <>
+          <div style={s.subTabRow}>
+            {PROGRESS_SUB_TABS.map((t) => (
+              <button key={t.id} style={s.tabButton(progressSubTab === t.id)} onClick={() => setProgressSubTab(t.id)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {progressSubTab === "charts" && (
+            <div style={s.section}>
+              <ProgressCharts />
+            </div>
+          )}
+
+          {progressSubTab === "measurements" && (
+            <div style={s.section}>
+              <MeasurementsTracker />
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === "tools" && (
+        <>
+          <div style={s.subTabRow}>
+            {TOOLS_SUB_TABS.map((t) => (
+              <button key={t.id} style={s.tabButton(toolsSubTab === t.id)} onClick={() => setToolsSubTab(t.id)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {toolsSubTab === "timer" && (
+            <div style={s.section}>
+              <RestTimer />
+            </div>
+          )}
+
+          {toolsSubTab === "plates" && (
+            <div style={s.section}>
+              <PlateCalculator />
+            </div>
+          )}
+
+          {toolsSubTab === "warmup" && (
+            <div style={s.section}>
+              <WarmupCalculator />
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === "yoga" && (
+        <div style={s.section}>
+          <YogaLibrary />
+        </div>
+      )}
+
+      {detailExercise && (
+        <ExerciseDetailSheet
+          exercise={detailExercise.exercise}
+          planContext={detailExercise.planContext}
+          onClose={() => setDetailExercise(null)}
+          onLogThis={(name) => setExerciseName(name)}
+          onSwapped={() => refresh()}
+        />
       )}
     </div>
   );
