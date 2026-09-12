@@ -97,6 +97,19 @@ async function getExerciseById(id) {
   return found ? withImageUrls(found) : null;
 }
 
+// Exact-name lookup (case-insensitive) — used by ExerciseDetailSheet.jsx,
+// which only has a plain exercise name from the mesocycle plan (not the
+// dataset's internal id). Safe to match by exact name here because the
+// generator's exercise pool is built from this same dataset (see
+// exercisePool.js), so a planned exercise's name should always match one
+// entry here exactly, not just approximately.
+async function getExerciseByName(name) {
+  const all = await loadAll();
+  const target = name.trim().toLowerCase();
+  const found = all.find((ex) => ex.name.trim().toLowerCase() === target);
+  return found ? withImageUrls(found) : null;
+}
+
 // Raw access to the full corrected dataset, for the generator's exercise
 // pool logic — no image URLs attached here since the generator only
 // needs name/equipment/mechanic/muscle metadata, not photos.
@@ -124,5 +137,6 @@ export const exerciseLibrary = {
   searchExercises,
   getExercisesByBodyPart,
   getExerciseById,
+  getExerciseByName,
   getAllExercises,
 };

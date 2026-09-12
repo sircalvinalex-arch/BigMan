@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getMuscleFunction, getRealLifeTranslation } from "./exerciseInsights.js";
 import { listExercisesForMuscle } from "./exercisePool.js";
+import { exerciseLibrary } from "./exerciseLibrary.js";
 import { storage } from "./storage.js";
 
 function formatMuscleLabel(muscle) {
@@ -81,6 +82,8 @@ const s = {
     cursor: "pointer",
   },
   swapSection: { marginTop: 12 },
+  imageRow: { display: "flex", gap: 8, overflowX: "auto", marginBottom: 14 },
+  image: { width: 140, height: 140, objectFit: "cover", borderRadius: 8, flexShrink: 0 },
   option: {
     padding: "12px",
     borderRadius: 8,
@@ -117,6 +120,16 @@ export default function ExerciseDetailSheet({ exercise, planContext, onClose, on
   const [alternatives, setAlternatives] = useState([]);
   const [swapping, setSwapping] = useState(false);
   const [error, setError] = useState("");
+  const [imageUrls, setImageUrls] = useState(null); // null = still loading, [] = none found
+
+  useEffect(() => {
+    let cancelled = false;
+    setImageUrls(null);
+    exerciseLibrary.getExerciseByName(exercise?.name ?? "").then((found) => {
+      if (!cancelled) setImageUrls(found?.imageUrls ?? []);
+    });
+    return () => { cancelled = true; };
+  }, [exercise?.name]);
 
   if (!exercise) return null;
 
@@ -159,6 +172,15 @@ export default function ExerciseDetailSheet({ exercise, planContext, onClose, on
           <div style={s.meta}>
             {formatMuscleLabel(exercise.muscle)}
             {exercise.sets ? ` · ${exercise.sets} × ${exercise.reps} @ RIR ${exercise.rir}` : ""}
+          </div>
+        )}
+
+        {imageUrls === null && <p style={s.empty}>Loading photos...</p>}
+        {imageUrls?.length > 0 && (
+          <div style={s.imageRow}>
+            {imageUrls.map((url, i) => (
+              <img key={i} src={url} alt={`${exercise.name} step ${i + 1}`} style={s.image} />
+            ))}
           </div>
         )}
 

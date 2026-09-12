@@ -34,21 +34,38 @@ const s = {
 
 const PRESETS = [60, 90, 120, 180];
 
-// Short beep using the Web Audio API — no audio file needed.
-function playBeep() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.5);
-  } catch {
-    // Audio not available (e.g. autoplay restrictions) — silently skip.
+// Three short beeps rather than one — a single 0.5s beep is easy to miss
+// if the phone isn't in hand. Reuses a persistent AudioContext (see
+// ensureAudioContext below) rather than creating a fresh one here: many
+// mobile browsers, especially iOS Safari, block audio from a context
+// that wasn't created/resumed during a direct user tap, and this fires
+// from a setInterval callback, not a tap.
+function playAlarm(ctx) {
+  if (ctx) {
+    try {
+      [0, 0.35, 0.7].forEach((offset) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.3, ctx.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.25);
+        osc.start(ctx.currentTime + offset);
+        osc.stop(ctx.currentTime + offset + 0.25);
+      });
+    } catch {
+      // Audio not available — fall through to vibration below.
+    }
+  }
+  // Vibration is a useful backup on phones (works even on silent mode on
+  // most Android browsers) and costs nothing to also try on top of audio.
+  if (navigator.vibrate) {
+    try {
+      navigator.vibrate([200, 100, 200, 100, 200]);
+    } catch {
+      // Not supported (e.g. iOS Safari) — ignore.
+    }
   }
 }
 
@@ -63,6 +80,23 @@ export default function RestTimer() {
   const [remaining, setRemaining] = useState(90);
   const [running, setRunning] = useState(false);
   const intervalRef = useRef(null);
+  const audioCtxRef = useRef(null);
+
+  // Create (or resume) the AudioContext only from within a real tap —
+  // the Start button click — so it's actually unlocked by the time the
+  // alarm needs to fire later from a timer callback.
+  const ensureAudioContext = () => {
+    if (!audioCtxRef.current) {
+      try {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      } catch {
+        audioCtxRef.current = null;
+      }
+    }
+    if (audioCtxRef.current?.state === "suspended") {
+      audioCtxRef.current.resume();
+    }
+  };
 
   useEffect(() => {
     if (running) {
@@ -71,7 +105,7 @@ export default function RestTimer() {
           if (prev <= 1) {
             clearInterval(intervalRef.current);
             setRunning(false);
-            playBeep();
+            playAlarm(audioCtxRef.current);
             return 0;
           }
           return prev - 1;
@@ -88,6 +122,7 @@ export default function RestTimer() {
   };
 
   const handleStart = () => {
+    ensureAudioContext();
     if (remaining === 0) setRemaining(duration);
     setRunning(true);
   };
