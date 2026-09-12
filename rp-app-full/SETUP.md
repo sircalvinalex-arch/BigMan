@@ -73,6 +73,27 @@ By default, Supabase redirects magic-link sign-ins to `localhost:3000`, which wi
 3. Add that same URL under **Redirect URLs**
 4. Save
 
+### Enable the 6-digit code in the login email (required — easy to miss)
+The app's login screen asks people to type in a 6-digit code rather than
+rely on clicking the emailed link. This matters most on phones: tapping
+the link from Gmail (or any mail app) opens your **default browser**, not
+an installed home-screen version of this app — and on iOS, that browser's
+session is stored completely separately from the installed app's storage
+anyway. So the link can "work" and the installed app still never sees you
+as signed in. Typing the code into the still-open app sidesteps all of
+that.
+
+By default, Supabase's magic-link email template only includes the
+clickable link — the code has to be added explicitly:
+1. Authentication → **Email Templates** → **Magic Link**
+2. In the template body, add `{{ .Token }}` somewhere visible (e.g. "Or
+   enter this code: `{{ .Token }}`") — it can sit right alongside the
+   existing `{{ .ConfirmationURL }}` link, no need to remove that
+3. Save
+
+Without this step, the email people receive won't contain a code at all,
+and the "Verify code" step in the app will have nothing for them to type.
+
 ## 3. Exercise Library — no setup needed
 
 The Exercise Library pulls directly from [`free-exercise-db`](https://github.com/yuhonas/free-exercise-db), a public-domain dataset hosted on GitHub. There's nothing to deploy — the app fetches it straight from GitHub's servers at runtime.
@@ -103,13 +124,14 @@ Vercel doesn't pick up environment variable changes automatically — after addi
 ## 6. Test it
 
 1. Open your live URL
-2. Enter your email, click **Send magic link**
-3. Check your email, click the confirmation link
-4. You should land back on your app, signed in
+2. Enter your email, click **Send code**
+3. Check your email for the 6-digit code, type it into the app, click **Verify code**
+4. You should land on your app, signed in
 
 **If you see "Failed to fetch"** → `VITE_SUPABASE_URL` is wrong or still placeholder text
 **If you see "Invalid API key"** → `VITE_SUPABASE_ANON_KEY` is wrong, or you're on a legacy key that's been disabled — use the Publishable key instead
 **If it redirects to `localhost` and fails** → Site URL / Redirect URLs step (4 above) wasn't done
+**If the email has no code to type in** → the email template step above wasn't done — `{{ .Token }}` needs to be added to the Magic Link template
 **If it hangs on "Loading your training data..."** → check the browser console; a 404 on the Supabase requests means the schema (step 2) wasn't run or didn't complete
 **If the Exercise Library shows an error** → this pulls from GitHub directly and needs no setup; a failure here usually means a temporary network hiccup — try again
 

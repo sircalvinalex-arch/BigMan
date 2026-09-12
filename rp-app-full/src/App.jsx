@@ -165,7 +165,9 @@ const s = {
 
 function LoginScreen() {
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
   const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
 
@@ -184,15 +186,51 @@ function LoginScreen() {
     }
   };
 
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setVerifying(true);
+    setError("");
+    try {
+      await storage.verifyEmailCode(email.trim(), code.trim());
+      // No further action needed here — App's onAuthStateChange listener
+      // picks up the new session and swaps to the Dashboard automatically.
+    } catch (err) {
+      setError(err.message || "That code didn't work — check it and try again.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   return (
     <div style={s.center}>
       <div style={{ width: "100%", maxWidth: 340 }}>
         <h1 style={s.h1}>RP Workout</h1>
         <p style={s.sub}>Sign in to sync your training across devices.</p>
         {sent ? (
-          <p style={{ fontSize: 14 }}>
-            Check <strong>{email}</strong> for a magic link to finish signing in.
-          </p>
+          <>
+            <p style={{ fontSize: 14, marginBottom: 12 }}>
+              Check <strong>{email}</strong> — enter the 6-digit code from that email below.
+              (If you're on a computer, clicking the link in the email works too — but on a
+              phone, especially if you've added this app to your home screen, the code is
+              the reliable way in: tapping the link opens your regular browser instead of
+              this app.)
+            </p>
+            <form onSubmit={handleVerify}>
+              <input
+                style={s.input}
+                type="text"
+                inputMode="numeric"
+                placeholder="6-digit code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+              />
+              <button style={s.button} type="submit" disabled={verifying}>
+                {verifying ? "Verifying..." : "Verify code"}
+              </button>
+              {error && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 8 }}>{error}</p>}
+            </form>
+          </>
         ) : (
           <form onSubmit={handleSubmit}>
             <input
@@ -203,7 +241,7 @@ function LoginScreen() {
               onChange={(e) => setEmail(e.target.value)}
             />
             <button style={s.button} type="submit" disabled={sending}>
-              {sending ? "Sending..." : "Send magic link"}
+              {sending ? "Sending..." : "Send code"}
             </button>
             {error && <p style={{ color: "var(--danger)", fontSize: 13, marginTop: 8 }}>{error}</p>}
           </form>

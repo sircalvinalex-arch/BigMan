@@ -19,6 +19,18 @@ async function signInWithEmail(email) {
   if (error) throw error;
 }
 
+// Completes sign-in using the 6-digit code from the same email — this is
+// what makes login work when the app is installed as a home-screen PWA.
+// Tapping the magic link instead opens the phone's default browser, not
+// the installed app, and on iOS that browser's session is stored
+// separately from the installed app's storage anyway — so the link can
+// "work" and the app still never sees you as signed in. Typing the code
+// back into the already-open app sidesteps the problem entirely.
+async function verifyEmailCode(email, token) {
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  if (error) throw error;
+}
+
 async function signOut() {
   await supabase.auth.signOut();
 }
@@ -212,6 +224,7 @@ async function deleteProgressPhoto(id, storagePath) {
 export const storage = {
   getUser,
   signInWithEmail,
+  verifyEmailCode,
   signOut,
   onAuthStateChange,
   createMesocycle,
