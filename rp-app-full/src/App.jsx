@@ -17,6 +17,7 @@ import { computeFatigueSignals } from "./fatigueSignals.js";
 import FatigueBanner from "./FatigueBanner.jsx";
 import BackgroundMotif from "./BackgroundMotif.jsx";
 import ExerciseDetailSheet from "./ExerciseDetailSheet.jsx";
+import StretchRoutineGenerator from "./StretchRoutineGenerator.jsx";
 import { personalRecords, findNewPRs } from "./stats.js";
 import { aiClient } from "./aiClient.js";
 import VoiceInputButton from "./VoiceInputButton.jsx";
@@ -276,6 +277,12 @@ const TOOLS_SUB_TABS = [
   { id: "warmup", label: "Warm-up" },
 ];
 
+const YOGA_SUB_TABS = [
+  { id: "poses", label: "Yoga poses" },
+  { id: "pre", label: "Pre-workout warm-up" },
+  { id: "stretch", label: "Post-workout stretch" },
+];
+
 function formatMuscleLabel(muscle) {
   return muscle
     .split("_")
@@ -302,6 +309,7 @@ function Dashboard({ user }) {
   const [trainSubTab, setTrainSubTab] = useState(null); // null = use the smart default below
   const [progressSubTab, setProgressSubTab] = useState("charts");
   const [toolsSubTab, setToolsSubTab] = useState("timer");
+  const [yogaSubTab, setYogaSubTab] = useState("poses");
   const [aiBoost, setAiBoost] = useState(aiClient.isAiBoostEnabled());
   const [nlText, setNlText] = useState("");
   const [nlParsing, setNlParsing] = useState(false);
@@ -829,9 +837,33 @@ function Dashboard({ user }) {
       )}
 
       {tab === "yoga" && (
-        <div style={s.section}>
-          <YogaLibrary />
-        </div>
+        <>
+          <div style={s.subTabRow}>
+            {YOGA_SUB_TABS.map((t) => (
+              <button key={t.id} style={s.tabButton(yogaSubTab === t.id)} onClick={() => setYogaSubTab(t.id)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {yogaSubTab === "poses" && (
+            <div style={s.section}>
+              <YogaLibrary />
+            </div>
+          )}
+
+          {yogaSubTab === "pre" && (
+            <div style={s.section}>
+              <StretchRoutineGenerator mode="pre" />
+            </div>
+          )}
+
+          {yogaSubTab === "stretch" && (
+            <div style={s.section}>
+              <StretchRoutineGenerator mode="post" />
+            </div>
+          )}
+        </>
       )}
 
       {detailExercise && (

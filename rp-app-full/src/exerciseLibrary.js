@@ -39,9 +39,23 @@ const EQUIPMENT_CORRECTIONS = {
   // only" is actually correct there despite matching the word "bench".
 };
 
+// The dataset's "equipment" field is single-valued (e.g. "dumbbell"), so
+// it can't separately capture that an exercise ALSO needs a bench —
+// "Dumbbell Bench Press" and "Standing Dumbbell Curl" are both tagged
+// "dumbbell" with no way to tell them apart. Overwriting equipment to
+// "bench" would lose the fact that it's still fundamentally a dumbbell
+// exercise (useful to someone who does have one), so this is a second,
+// independent flag layered on top instead — heuristic, based on the
+// exercise name, since the dataset itself has no explicit bench field.
+// Not perfect (a name-based guess can't be), but catches the large
+// majority: any exercise whose name says "bench", "incline", or
+// "decline" is done on a bench in this dataset's naming convention.
+const BENCH_NAME_PATTERN = /\b(bench|incline|decline)\b/i;
+
 function applyCorrections(exercise) {
   const corrected = EQUIPMENT_CORRECTIONS[exercise.name];
-  return corrected ? { ...exercise, equipment: corrected } : exercise;
+  const withEquipment = corrected ? { ...exercise, equipment: corrected } : exercise;
+  return { ...withEquipment, requiresBench: BENCH_NAME_PATTERN.test(exercise.name) };
 }
 
 // The full dataset is ~800 exercises in one JSON file — small enough to
@@ -65,20 +79,21 @@ function withImageUrls(exercise) {
   };
 }
 
-async function searchExercises(query, { limit = 20, equipment = [], category = null } = {}) {
+async function searchExercises(query, { limit = 20, equipment = [], category = null, excludeBench = false } = {}) {
   const all = await loadAll();
   const q = query.toLowerCase();
   return all
     .filter((ex) => ex.name.toLowerCase().includes(q))
     .filter((ex) => equipment.length === 0 || equipment.includes(ex.equipment))
     .filter((ex) => !category || ex.category === category)
+    .filter((ex) => !excludeBench || !ex.requiresBench)
     .slice(0, limit)
     .map(withImageUrls);
 }
 
 // Body part browsing maps onto this dataset's "primaryMuscles" field
 // rather than a bodyPart field, so we match loosely by keyword.
-async function getExercisesByBodyPart(bodyPart, { limit = 30, equipment = [], category = null } = {}) {
+async function getExercisesByBodyPart(bodyPart, { limit = 30, equipment = [], category = null, excludeBench = false } = {}) {
   const all = await loadAll();
   const q = bodyPart.toLowerCase();
   return all
@@ -87,6 +102,7 @@ async function getExercisesByBodyPart(bodyPart, { limit = 30, equipment = [], ca
     )
     .filter((ex) => equipment.length === 0 || equipment.includes(ex.equipment))
     .filter((ex) => !category || ex.category === category)
+    .filter((ex) => !excludeBench || !ex.requiresBench)
     .slice(0, limit)
     .map(withImageUrls);
 }

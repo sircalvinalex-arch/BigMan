@@ -49,7 +49,7 @@ let allExercisesCache = null;
 // stretch (e.g. "One Knee To Chest") get picked as a strength exercise.
 const STRENGTH_CATEGORIES = ["strength", "powerlifting", "olympic weightlifting", "strongman"];
 
-async function getCandidatesForMuscle(muscle, { equipment = [] } = {}) {
+async function getCandidatesForMuscle(muscle, { equipment = [], excludeBench = false } = {}) {
   if (!allExercisesCache) {
     allExercisesCache = await exerciseLibrary.getAllExercises();
   }
@@ -61,6 +61,7 @@ async function getCandidatesForMuscle(muscle, { equipment = [] } = {}) {
     if (!hitsThisMuscle) return false;
     if (!STRENGTH_CATEGORIES.includes(ex.category)) return false;
     if (equipment.length > 0 && !equipment.includes(ex.equipment)) return false;
+    if (excludeBench && ex.requiresBench) return false;
     return true;
   });
 }
@@ -104,8 +105,8 @@ export async function findMuscleForExercise(name) {
 // Returns every candidate exercise for a muscle group (not just the top
 // N) — used by the manual substitution picker, where the person should
 // see the full list rather than only the generator's auto-picks.
-export async function listExercisesForMuscle(muscle, { equipment = [] } = {}) {
-  const candidates = await getCandidatesForMuscle(muscle, { equipment });
+export async function listExercisesForMuscle(muscle, { equipment = [], excludeBench = false } = {}) {
+  const candidates = await getCandidatesForMuscle(muscle, { equipment, excludeBench });
   return sortCandidates(candidates, "neutral").map((ex) => ({
     name: ex.name,
     equipment: ex.equipment,
@@ -137,11 +138,12 @@ export async function buildMuscleIndex() {
 // exact same exercise every single week of the block.
 export async function pickExercisesForMuscle(muscle, {
   equipment = [],
+  excludeBench = false,
   track = "neutral",
   count = 2,
   weekIndex = 0,
 } = {}) {
-  const candidates = await getCandidatesForMuscle(muscle, { equipment });
+  const candidates = await getCandidatesForMuscle(muscle, { equipment, excludeBench });
   if (candidates.length === 0) return [];
 
   const sorted = sortCandidates(candidates, track);

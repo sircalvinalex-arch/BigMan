@@ -79,6 +79,7 @@ export default function MesocycleGenerator({ onSaved }) {
   const [equipment, setEquipment] = useState([]);
   const [perDayEquipment, setPerDayEquipment] = useState(false);
   const [equipmentByDay, setEquipmentByDay] = useState({}); // { [dayIndex]: string[] }
+  const [excludeBench, setExcludeBench] = useState(false);
   const [plan, setPlan] = useState(null);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -110,6 +111,7 @@ export default function MesocycleGenerator({ onSaved }) {
         equipmentByDay: perDayEquipment
           ? Array.from({ length: Number(daysPerWeek) }, (_, i) => equipmentByDay[i] ?? [])
           : null,
+        excludeBench,
       });
       setPlan(generated);
     } catch (err) {
@@ -227,6 +229,11 @@ export default function MesocycleGenerator({ onSaved }) {
             ))}
           </div>
         )}
+
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 13, cursor: "pointer" }}>
+          <input type="checkbox" checked={excludeBench} onChange={(e) => setExcludeBench(e.target.checked)} />
+          No bench available (excludes bench, incline, and decline exercises, even if you selected dumbbell/barbell above)
+        </label>
 
         <button style={s.button} onClick={handleGenerate} disabled={!track || generating}>
           {generating ? "Generating..." : track ? "Generate mesocycle" : "Pick a track first"}

@@ -121,6 +121,7 @@ const s = {
 };
 
 const EQUIPMENT_STORAGE_KEY = "rp-workout-app:available-equipment";
+const EXCLUDE_BENCH_STORAGE_KEY = "rp-workout-app:exclude-bench";
 
 function loadSavedEquipment() {
   try {
@@ -128,6 +129,14 @@ function loadSavedEquipment() {
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
+  }
+}
+
+function loadSavedExcludeBench() {
+  try {
+    return localStorage.getItem(EXCLUDE_BENCH_STORAGE_KEY) === "true";
+  } catch {
+    return false;
   }
 }
 
@@ -144,12 +153,17 @@ export default function ExerciseLibrary({ onSelectExercise }) {
   const [muscleFunction, setMuscleFunction] = useState(null);
   const [fullscreenImage, setFullscreenImage] = useState(null);
   const [selectedEquipment, setSelectedEquipment] = useState(loadSavedEquipment);
+  const [excludeBench, setExcludeBench] = useState(loadSavedExcludeBench);
   const [showEquipmentPanel, setShowEquipmentPanel] = useState(false);
   const [mode, setMode] = useState("strength"); // "strength" | "stretching"
 
   useEffect(() => {
     localStorage.setItem(EQUIPMENT_STORAGE_KEY, JSON.stringify(selectedEquipment));
   }, [selectedEquipment]);
+
+  useEffect(() => {
+    localStorage.setItem(EXCLUDE_BENCH_STORAGE_KEY, String(excludeBench));
+  }, [excludeBench]);
 
   const toggleEquipment = (item) => {
     setSelectedEquipment((prev) =>
@@ -162,8 +176,8 @@ export default function ExerciseLibrary({ onSelectExercise }) {
     setError("");
     try {
       const data = query.trim()
-        ? await exerciseLibrary.searchExercises(query.trim(), { equipment: selectedEquipment, category: mode === "stretching" ? "stretching" : null })
-        : await exerciseLibrary.getExercisesByBodyPart(activeGroup, { equipment: selectedEquipment, category: mode === "stretching" ? "stretching" : null });
+        ? await exerciseLibrary.searchExercises(query.trim(), { equipment: selectedEquipment, category: mode === "stretching" ? "stretching" : null, excludeBench })
+        : await exerciseLibrary.getExercisesByBodyPart(activeGroup, { equipment: selectedEquipment, category: mode === "stretching" ? "stretching" : null, excludeBench });
       setResults(data);
     } catch (err) {
       setError("Couldn't load the exercise library right now. Try again in a moment.");
@@ -175,7 +189,7 @@ export default function ExerciseLibrary({ onSelectExercise }) {
   useEffect(() => {
     runSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeGroup, selectedEquipment, mode]);
+  }, [activeGroup, selectedEquipment, excludeBench, mode]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -242,6 +256,10 @@ export default function ExerciseLibrary({ onSelectExercise }) {
               {item}
             </button>
           ))}
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 12, cursor: "pointer", width: "100%" }}>
+            <input type="checkbox" checked={excludeBench} onChange={(e) => setExcludeBench(e.target.checked)} />
+            No bench available (excludes bench, incline, and decline exercises)
+          </label>
         </div>
       )}
 

@@ -55,6 +55,7 @@ export async function generateMesocycle({
   track = "neutral", // "male" | "female" | "neutral"
   equipment = [],       // used when equipmentByDay is not provided
   equipmentByDay = null, // optional: array of equipment-lists, one per day index
+  excludeBench = false, // true = skip any exercise that needs a bench, regardless of equipment selected
 }) {
   const split = SPLIT_TEMPLATES[daysPerWeek] ?? SPLIT_TEMPLATES[4];
   const landmarks = VOLUME_LANDMARKS[track] ?? VOLUME_LANDMARKS.neutral;
@@ -77,6 +78,7 @@ export async function generateMesocycle({
 
             const picks = await pickExercisesForMuscle(muscle, {
               equipment: dayEquipment,
+              excludeBench,
               track,
               count: setsThisDay > 6 ? 2 : 1, // split heavier volume across 2 exercises
               weekIndex, // rotates which exercise gets picked week to week
