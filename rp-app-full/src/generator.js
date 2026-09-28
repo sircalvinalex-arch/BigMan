@@ -17,9 +17,20 @@ import { pickExercisesForMuscle } from "./exercisePool.js";
 // already divides a muscle's weekly target by however many days it
 // appears in the split, so full-body "just works" by listing every
 // muscle on every day — no separate volume logic needed for it.
+// Order matters here, not just membership — this list IS the exercise
+// order for every full-body day (see ALL_MUSCLES.map below). Legs first
+// (most fatiguing, most technically demanding — trained while freshest),
+// then alternating push/pull upper-body patterns (back, chest, shoulders)
+// so no muscle gets trained as a synergist right after being isolated
+// (e.g. triceps right before a pressing movement would blunt it),
+// arm isolation work in an antagonist pair (biceps/triceps don't
+// interfere with each other), then calves/abs last since they're both
+// small and being fatigued by them doesn't hurt anything after.
 const ALL_MUSCLES = [
-  "chest", "lats", "middle_back", "shoulders", "biceps", "triceps",
-  "quadriceps", "hamstrings", "glutes", "calves", "abdominals", "traps",
+  "quadriceps", "hamstrings", "glutes",
+  "lats", "middle_back", "chest", "shoulders", "traps",
+  "biceps", "triceps",
+  "calves", "abdominals",
 ];
 
 const SPLIT_TEMPLATES = {
