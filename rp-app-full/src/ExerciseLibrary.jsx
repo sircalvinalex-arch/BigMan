@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { exerciseLibrary, EQUIPMENT_OPTIONS } from "./exerciseLibrary.js";
 import { findMuscleForExercise } from "./exercisePool.js";
 import { getMuscleFunction, getRealLifeTranslation } from "./exerciseInsights.js";
+import MuscleDiagram from "./MuscleDiagram.jsx";
 
 const s = {
   wrap: { marginTop: 8 },
@@ -303,9 +304,9 @@ export default function ExerciseLibrary({ onSelectExercise }) {
             <button style={s.closeButton} onClick={() => setSelected(null)}>← Back</button>
             <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>{selected.name}</div>
 
-            {selected.imageUrls?.length > 0 && (
+            {(selected.imageUrls?.length > 0 || selected.primaryMuscles?.length > 0) && (
               <div style={s.imageRow}>
-                {selected.imageUrls.map((url, i) => (
+                {selected.imageUrls?.map((url, i) => (
                   <img
                     key={i}
                     style={{ ...s.image, cursor: "pointer" }}
@@ -314,6 +315,7 @@ export default function ExerciseLibrary({ onSelectExercise }) {
                     onClick={() => setFullscreenImage(url)}
                   />
                 ))}
+                {selected.primaryMuscles?.[0] && <MuscleDiagram muscle={selected.primaryMuscles[0]} size={140} />}
               </div>
             )}
 

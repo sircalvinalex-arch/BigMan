@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getMuscleFunction, getRealLifeTranslation } from "./exerciseInsights.js";
 import { listExercisesForMuscle } from "./exercisePool.js";
 import { exerciseLibrary } from "./exerciseLibrary.js";
-import { storage } from "./storage.js";
+import MuscleDiagram from "./MuscleDiagram.jsx";
 
 function formatMuscleLabel(muscle) {
   return (muscle ?? "")
@@ -13,7 +13,11 @@ function formatMuscleLabel(muscle) {
 
 // Produces an updated plan with exactly one exercise slot renamed, leaving
 // everything else (sets/reps/rir ramp, other days/weeks) untouched.
-function planWithExerciseSwapped(plan, { weekIndex, dayIndex, exerciseIndex, newName }) {
+// Exported so callers can use it for either a persisted swap (App.jsx,
+// via storage.updateMesocyclePlan) or a local, not-yet-saved one
+// (MesocycleGenerator.jsx's preview, via its own plan state) — this
+// component doesn't know or care which; see onSwap below.
+export function planWithExerciseSwapped(plan, { weekIndex, dayIndex, exerciseIndex, newName }) {
   return {
     ...plan,
     weekPlans: plan.weekPlans.map((week) => {
@@ -110,11 +114,12 @@ const s = {
 };
 
 // exercise: { name, muscle, sets, reps, rir }
-// planContext (optional): { meso, weekIndex, dayIndex, exerciseIndex } — when
-//   present, enables the "Swap exercise" action, which persists the change
-//   back to that mesocycle's plan. Without it (e.g. browsing from a plain
-//   library context) the sheet is informational only.
-export default function ExerciseDetailSheet({ exercise, planContext, onClose, onLogThis, onSwapped }) {
+// onSwap (optional): async (newName) => void — when provided, enables the
+//   "Swap exercise" action. The caller decides what "swap" means: App.jsx
+//   persists it via storage.updateMesocyclePlan, MesocycleGenerator.jsx
+//   just updates its local, unsaved plan state. Without it (e.g. browsing
+//   from a plain library context) the sheet is informational only.
+export default function ExerciseDetailSheet({ exercise, onClose, onLogThis, onSwap }) {
   const [showSwap, setShowSwap] = useState(false);
   const [loadingAlts, setLoadingAlts] = useState(false);
   const [alternatives, setAlternatives] = useState([]);
@@ -149,14 +154,11 @@ export default function ExerciseDetailSheet({ exercise, planContext, onClose, on
   };
 
   const handlePickAlternative = async (newName) => {
-    if (!planContext || swapping) return;
+    if (!onSwap || swapping) return;
     setSwapping(true);
     setError("");
     try {
-      const { meso, weekIndex, dayIndex, exerciseIndex } = planContext;
-      const updatedPlan = planWithExerciseSwapped(meso.plan, { weekIndex, dayIndex, exerciseIndex, newName });
-      await storage.updateMesocyclePlan(meso.id, updatedPlan);
-      onSwapped?.(newName);
+      await onSwap(newName);
       onClose();
     } catch (err) {
       setError(err.message || "Couldn't save that swap — try again.");
@@ -176,11 +178,12 @@ export default function ExerciseDetailSheet({ exercise, planContext, onClose, on
         )}
 
         {imageUrls === null && <p style={s.empty}>Loading photos...</p>}
-        {imageUrls?.length > 0 && (
+        {(imageUrls?.length > 0 || exercise.muscle) && (
           <div style={s.imageRow}>
-            {imageUrls.map((url, i) => (
+            {imageUrls?.map((url, i) => (
               <img key={i} src={url} alt={`${exercise.name} step ${i + 1}`} style={s.image} />
             ))}
+            {exercise.muscle && <MuscleDiagram muscle={exercise.muscle} size={140} />}
           </div>
         )}
 
@@ -202,7 +205,7 @@ export default function ExerciseDetailSheet({ exercise, planContext, onClose, on
               Log this
             </button>
           )}
-          {planContext && !showSwap && (
+          {onSwap && !showSwap && (
             <button style={s.actionButtonOutline} onClick={handleShowSwap}>
               Swap exercise
             </button>

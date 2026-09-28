@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { exerciseLibrary } from "./exerciseLibrary.js";
+import MuscleDiagram from "./MuscleDiagram.jsx";
 
 // Head-to-toe order, using the raw muscle-name strings this dataset uses
 // (these are free-exercise-db's own primaryMuscles values, not the app's
@@ -176,6 +177,7 @@ export default function StretchRoutineGenerator({ mode = "post" }) {
               ) : (
                 <div style={s.thumbEmpty} />
               )}
+              <MuscleDiagram muscle={item.region} size={56} />
               <div style={s.rowMain}>
                 <div style={s.region}>
                   {regionLabel(item.region)}

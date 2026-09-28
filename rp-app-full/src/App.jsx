@@ -16,7 +16,7 @@ import { autoregulateNextWeek, summarizeAdjustments } from "./autoregulate.js";
 import { computeFatigueSignals } from "./fatigueSignals.js";
 import FatigueBanner from "./FatigueBanner.jsx";
 import BackgroundMotif from "./BackgroundMotif.jsx";
-import ExerciseDetailSheet from "./ExerciseDetailSheet.jsx";
+import ExerciseDetailSheet, { planWithExerciseSwapped } from "./ExerciseDetailSheet.jsx";
 import StretchRoutineGenerator from "./StretchRoutineGenerator.jsx";
 import { personalRecords, findNewPRs } from "./stats.js";
 import { aiClient } from "./aiClient.js";
@@ -869,10 +869,14 @@ function Dashboard({ user }) {
       {detailExercise && (
         <ExerciseDetailSheet
           exercise={detailExercise.exercise}
-          planContext={detailExercise.planContext}
           onClose={() => setDetailExercise(null)}
           onLogThis={(name) => setExerciseName(name)}
-          onSwapped={() => refresh()}
+          onSwap={async (newName) => {
+            const { meso, weekIndex, dayIndex, exerciseIndex } = detailExercise.planContext;
+            const updatedPlan = planWithExerciseSwapped(meso.plan, { weekIndex, dayIndex, exerciseIndex, newName });
+            await storage.updateMesocyclePlan(meso.id, updatedPlan);
+            refresh();
+          }}
         />
       )}
     </div>

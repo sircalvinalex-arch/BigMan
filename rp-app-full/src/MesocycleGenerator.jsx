@@ -3,6 +3,7 @@ import { generateMesocycle, SPLIT_TEMPLATES } from "./generator.js";
 import { EQUIPMENT_OPTIONS } from "./exerciseLibrary.js";
 import { storage } from "./storage.js";
 import { getWeekInsight } from "./weekInsights.js";
+import ExerciseDetailSheet, { planWithExerciseSwapped } from "./ExerciseDetailSheet.jsx";
 
 const s = {
   card: {
@@ -76,6 +77,7 @@ export default function MesocycleGenerator({ onSaved }) {
   const [weeks, setWeeks] = useState(5);
   const [daysPerWeek, setDaysPerWeek] = useState(4);
   const [splitStyle, setSplitStyle] = useState("bodypart");
+  const [detailExercise, setDetailExercise] = useState(null); // { exercise, context: { weekIndex, dayIndex, exerciseIndex } } | null
   const [track, setTrack] = useState(null); // asked fresh each time — no default
   const [equipment, setEquipment] = useState([]);
   const [perDayEquipment, setPerDayEquipment] = useState(false);
@@ -286,7 +288,16 @@ export default function MesocycleGenerator({ onSaved }) {
                 <div key={day.dayIndex} style={s.dayBlock}>
                   <div style={s.dayTitle}>Day {day.dayIndex}</div>
                   {day.exercises.map((ex, i) => (
-                    <div key={i} style={s.exerciseLine}>
+                    <div
+                      key={i}
+                      style={{ ...s.exerciseLine, cursor: "pointer" }}
+                      onClick={() =>
+                        setDetailExercise({
+                          exercise: ex,
+                          context: { weekIndex: week.weekIndex, dayIndex: day.dayIndex, exerciseIndex: i },
+                        })
+                      }
+                    >
                       {ex.name} — {ex.sets} × {ex.reps} @ RIR {ex.rir}
                     </div>
                   ))}
@@ -300,6 +311,17 @@ export default function MesocycleGenerator({ onSaved }) {
             {saving ? "Saving..." : "Save as a mesocycle"}
           </button>
         </div>
+      )}
+
+      {detailExercise && (
+        <ExerciseDetailSheet
+          exercise={detailExercise.exercise}
+          onClose={() => setDetailExercise(null)}
+          onSwap={async (newName) => {
+            const { weekIndex, dayIndex, exerciseIndex } = detailExercise.context;
+            setPlan((prev) => planWithExerciseSwapped(prev, { weekIndex, dayIndex, exerciseIndex, newName }));
+          }}
+        />
       )}
     </div>
   );
