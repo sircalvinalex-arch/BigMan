@@ -125,6 +125,7 @@ export default function StretchRoutineGenerator({ mode = "post" }) {
   const [routine, setRoutine] = useState(null); // array of { region, name, imageUrls, isDynamic } | null
   const [loading, setLoading] = useState(false);
   const [swappingRegion, setSwappingRegion] = useState(null);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
 
   const generate = async () => {
     setLoading(true);
@@ -166,7 +167,12 @@ export default function StretchRoutineGenerator({ mode = "post" }) {
           {routine.map((item) => (
             <div key={item.region} style={s.row}>
               {item.imageUrls?.[0] ? (
-                <img src={item.imageUrls[0]} alt={item.name} style={s.thumb} />
+                <img
+                  src={item.imageUrls[0]}
+                  alt={item.name}
+                  style={{ ...s.thumb, cursor: "pointer" }}
+                  onClick={() => setFullscreenImage(item.imageUrls[0])}
+                />
               ) : (
                 <div style={s.thumbEmpty} />
               )}
@@ -191,6 +197,18 @@ export default function StretchRoutineGenerator({ mode = "post" }) {
       )}
 
       {!routine && !loading && <p style={s.empty}>{config.blurb}</p>}
+
+      {fullscreenImage && (
+        <div
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 100,
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+          }}
+          onClick={() => setFullscreenImage(null)}
+        >
+          <img src={fullscreenImage} alt="Full screen" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+        </div>
+      )}
     </div>
   );
 }

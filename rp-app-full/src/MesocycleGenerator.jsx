@@ -75,6 +75,7 @@ export default function MesocycleGenerator({ onSaved }) {
   const [name, setName] = useState("");
   const [weeks, setWeeks] = useState(5);
   const [daysPerWeek, setDaysPerWeek] = useState(4);
+  const [splitStyle, setSplitStyle] = useState("bodypart");
   const [track, setTrack] = useState(null); // asked fresh each time — no default
   const [equipment, setEquipment] = useState([]);
   const [perDayEquipment, setPerDayEquipment] = useState(false);
@@ -107,6 +108,7 @@ export default function MesocycleGenerator({ onSaved }) {
         weeks: Number(weeks),
         daysPerWeek: Number(daysPerWeek),
         track,
+        splitStyle,
         equipment: perDayEquipment ? [] : equipment,
         equipmentByDay: perDayEquipment
           ? Array.from({ length: Number(daysPerWeek) }, (_, i) => equipmentByDay[i] ?? [])
@@ -128,7 +130,7 @@ export default function MesocycleGenerator({ onSaved }) {
       await storage.createMesocycle({
         name: plan.name,
         weeks: plan.weeks,
-        focus: [`track:${plan.track}`, `days:${plan.daysPerWeek}`],
+        focus: [`track:${plan.track}`, `days:${plan.daysPerWeek}`, `split:${plan.splitStyle}`],
         plan, // full week-by-week plan, needed for auto-regulation later
       });
       onSaved?.();
@@ -189,6 +191,23 @@ export default function MesocycleGenerator({ onSaved }) {
           adjust as you go based on how it actually feels.
         </p>
 
+        <div style={s.label}>Split style</div>
+        <div style={{ ...s.segmented, marginBottom: 8 }}>
+          <div style={s.segment(splitStyle === "bodypart")} onClick={() => setSplitStyle("bodypart")}>
+            Split (push/pull/legs-ish)
+          </div>
+          <div style={s.segment(splitStyle === "fullbody")} onClick={() => setSplitStyle("fullbody")}>
+            Full body every day
+          </div>
+        </div>
+        <p style={s.disclosure}>
+          Full body trains every major muscle group each session, dividing the week's total
+          sets per muscle across however many days you train — more frequent, smaller doses
+          per muscle rather than one or two focused days. Split concentrates a muscle's volume
+          onto fewer days instead. Neither is more effective on its own; pick whichever fits
+          your schedule and recovery.
+        </p>
+
         <div style={s.label}>Available equipment (optional — leave blank for all)</div>
         <div style={{ ...s.segmented, marginBottom: 8 }}>
           <div style={s.segment(!perDayEquipment)} onClick={() => setPerDayEquipment(false)}>
@@ -247,7 +266,8 @@ export default function MesocycleGenerator({ onSaved }) {
         <div style={s.card}>
           <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>{plan.name}</div>
           <p style={{ ...s.disclosure, marginBottom: 12 }}>
-            {plan.weeks} weeks · {plan.daysPerWeek} days/week · {plan.track} track — sets ramp from
+            {plan.weeks} weeks · {plan.daysPerWeek} days/week · {plan.track} track ·{" "}
+            {plan.splitStyle === "fullbody" ? "full body" : "split"} — sets ramp from
             MEV toward MRV each week, then deload in the final week.
           </p>
 

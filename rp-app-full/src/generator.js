@@ -10,31 +10,49 @@ import { VOLUME_LANDMARKS, targetSetsForWeek } from "./volumeLandmarks.js";
 import { pickExercisesForMuscle } from "./exercisePool.js";
 
 // Splits by days-per-week, listing which muscle groups get direct work
-// each day. Kept intentionally simple (full-body / upper-lower / PPL-ish)
-// rather than modeling every possible split.
+// each day. Two styles: "bodypart" (push/pull/legs-ish — a muscle is
+// trained on specific days) and "fullbody" (every muscle trained every
+// day, with that muscle's weekly sets divided across all of them instead
+// of concentrated on one or two days). The per-day set math below
+// already divides a muscle's weekly target by however many days it
+// appears in the split, so full-body "just works" by listing every
+// muscle on every day — no separate volume logic needed for it.
+const ALL_MUSCLES = [
+  "chest", "lats", "middle_back", "shoulders", "biceps", "triceps",
+  "quadriceps", "hamstrings", "glutes", "calves", "abdominals", "traps",
+];
+
 const SPLIT_TEMPLATES = {
-  2: [
-    ["chest", "lats", "quadriceps", "hamstrings", "shoulders", "abdominals"],
-    ["middle_back", "glutes", "biceps", "triceps", "calves", "abdominals"],
-  ],
-  3: [
-    ["chest", "shoulders", "triceps", "abdominals"],
-    ["lats", "middle_back", "biceps", "traps"],
-    ["quadriceps", "hamstrings", "glutes", "calves"],
-  ],
-  4: [
-    ["chest", "shoulders", "triceps"],
-    ["lats", "middle_back", "biceps"],
-    ["quadriceps", "glutes", "calves"],
-    ["hamstrings", "glutes", "abdominals", "traps"],
-  ],
-  5: [
-    ["chest", "triceps"],
-    ["lats", "middle_back", "biceps"],
-    ["quadriceps", "calves"],
-    ["shoulders", "traps", "abdominals"],
-    ["hamstrings", "glutes"],
-  ],
+  bodypart: {
+    2: [
+      ["chest", "lats", "quadriceps", "hamstrings", "shoulders", "abdominals"],
+      ["middle_back", "glutes", "biceps", "triceps", "calves", "abdominals"],
+    ],
+    3: [
+      ["chest", "shoulders", "triceps", "abdominals"],
+      ["lats", "middle_back", "biceps", "traps"],
+      ["quadriceps", "hamstrings", "glutes", "calves"],
+    ],
+    4: [
+      ["chest", "shoulders", "triceps"],
+      ["lats", "middle_back", "biceps"],
+      ["quadriceps", "glutes", "calves"],
+      ["hamstrings", "glutes", "abdominals", "traps"],
+    ],
+    5: [
+      ["chest", "triceps"],
+      ["lats", "middle_back", "biceps"],
+      ["quadriceps", "calves"],
+      ["shoulders", "traps", "abdominals"],
+      ["hamstrings", "glutes"],
+    ],
+  },
+  fullbody: {
+    2: [ALL_MUSCLES, ALL_MUSCLES],
+    3: [ALL_MUSCLES, ALL_MUSCLES, ALL_MUSCLES],
+    4: [ALL_MUSCLES, ALL_MUSCLES, ALL_MUSCLES, ALL_MUSCLES],
+    5: [ALL_MUSCLES, ALL_MUSCLES, ALL_MUSCLES, ALL_MUSCLES, ALL_MUSCLES],
+  },
 };
 
 // Rep range by RIR-based intensity — widens slightly through the ramp,
@@ -53,11 +71,13 @@ export async function generateMesocycle({
   weeks = 5,
   daysPerWeek = 4,
   track = "neutral", // "male" | "female" | "neutral"
+  splitStyle = "bodypart", // "bodypart" (push/pull/legs-ish) | "fullbody" (every muscle, every day)
   equipment = [],       // used when equipmentByDay is not provided
   equipmentByDay = null, // optional: array of equipment-lists, one per day index
   excludeBench = false, // true = skip any exercise that needs a bench, regardless of equipment selected
 }) {
-  const split = SPLIT_TEMPLATES[daysPerWeek] ?? SPLIT_TEMPLATES[4];
+  const styleTemplates = SPLIT_TEMPLATES[splitStyle] ?? SPLIT_TEMPLATES.bodypart;
+  const split = styleTemplates[daysPerWeek] ?? styleTemplates[4];
   const landmarks = VOLUME_LANDMARKS[track] ?? VOLUME_LANDMARKS.neutral;
 
   const weekPlans = [];
@@ -108,6 +128,7 @@ export async function generateMesocycle({
     weeks,
     daysPerWeek,
     track,
+    splitStyle,
     weekPlans,
   };
 }
