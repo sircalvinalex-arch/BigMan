@@ -13,23 +13,31 @@ function normalizeMuscle(muscle) {
   return (muscle ?? "").toLowerCase().trim().replace(/\s+/g, "_");
 }
 
-// Shared base body geometry — the same numbers describe both the front
-// and back views, since a body's silhouette is the same shape from
-// either side; only which region gets highlighted (and a couple of
-// back-only/front-only regions) differs.
+// Shared body geometry, described as tapered polygons/ellipses rather
+// than plain rectangles — gives the silhouette an actual waist, shoulders
+// wider than hips, hands, and feet, instead of a blocky mannequin. Same
+// geometry describes both the front and back views (a body's outline is
+// the same shape from either side); only which piece gets highlighted
+// differs.
 const BASE = {
-  head: { cx: 100, cy: 30, r: 20 },
-  neck: { x: 92, y: 48, width: 16, height: 10, rx: 4 },
-  torso: { x: 65, y: 58, width: 70, height: 90, rx: 14 },
-  hips: { x: 68, y: 148, width: 64, height: 25, rx: 10 },
-  armL: { x: 40, y: 70, width: 20, height: 55, rx: 9 },
-  armR: { x: 140, y: 70, width: 20, height: 55, rx: 9 },
-  forearmL: { x: 38, y: 125, width: 18, height: 50, rx: 8 },
-  forearmR: { x: 144, y: 125, width: 18, height: 50, rx: 8 },
-  legL: { x: 68, y: 173, width: 28, height: 80, rx: 12 },
-  legR: { x: 104, y: 173, width: 28, height: 80, rx: 12 },
-  calfL: { x: 70, y: 253, width: 24, height: 70, rx: 10 },
-  calfR: { x: 106, y: 253, width: 24, height: 70, rx: 10 },
+  head: { tag: "circle", cx: 100, cy: 28, r: 20 },
+  neck: { tag: "rect", x: 90, y: 44, width: 20, height: 14, rx: 4 },
+  torso: { tag: "polygon", points: "62,58 138,58 128,150 72,150" },
+  pelvis: { tag: "polygon", points: "72,150 128,150 136,180 64,180" },
+  shoulderL: { tag: "circle", cx: 60, cy: 64, r: 17 },
+  shoulderR: { tag: "circle", cx: 140, cy: 64, r: 17 },
+  armL: { tag: "polygon", points: "40,62 62,62 56,122 46,122" },
+  armR: { tag: "polygon", points: "160,62 138,62 144,122 154,122" },
+  forearmL: { tag: "polygon", points: "46,122 56,122 52,172 44,172" },
+  forearmR: { tag: "polygon", points: "154,122 144,122 148,172 156,172" },
+  handL: { tag: "ellipse", cx: 48, cy: 180, rx: 9, ry: 12 },
+  handR: { tag: "ellipse", cx: 152, cy: 180, rx: 9, ry: 12 },
+  thighL: { tag: "polygon", points: "64,180 100,180 96,255 70,255" },
+  thighR: { tag: "polygon", points: "136,180 100,180 104,255 130,255" },
+  calfL: { tag: "polygon", points: "70,255 96,255 92,330 74,330" },
+  calfR: { tag: "polygon", points: "130,255 104,255 108,330 126,330" },
+  footL: { tag: "ellipse", cx: 83, cy: 336, rx: 14, ry: 8 },
+  footR: { tag: "ellipse", cx: 117, cy: 336, rx: 14, ry: 8 },
 };
 
 // Per-muscle: which view to draw, and the highlight shape(s) layered on
@@ -38,50 +46,57 @@ const BASE = {
 // muscle strings (used by the Exercise Library and stretch routines) —
 // normalized to underscores so "lower back" and "lower_back" both match.
 const MUSCLE_REGIONS = {
-  chest: { view: "front", shapes: [{ tag: "rect", x: 65, y: 58, width: 70, height: 38, rx: 10 }] },
-  shoulders: { view: "front", shapes: [{ tag: "circle", cx: 58, cy: 65, r: 15 }, { tag: "circle", cx: 142, cy: 65, r: 15 }] },
-  biceps: { view: "front", shapes: [{ tag: "rect", ...BASE.armL }, { tag: "rect", ...BASE.armR }] },
-  forearms: { view: "front", shapes: [{ tag: "rect", ...BASE.forearmL }, { tag: "rect", ...BASE.forearmR }] },
-  abdominals: { view: "front", shapes: [{ tag: "rect", x: 72, y: 98, width: 56, height: 45, rx: 8 }] },
-  quadriceps: { view: "front", shapes: [{ tag: "rect", ...BASE.legL }, { tag: "rect", ...BASE.legR }] },
-  adductors: { view: "front", shapes: [{ tag: "rect", x: 94, y: 178, width: 12, height: 68, rx: 6 }] },
-  abductors: { view: "front", shapes: [{ tag: "rect", x: 58, y: 176, width: 11, height: 74, rx: 5 }, { tag: "rect", x: 131, y: 176, width: 11, height: 74, rx: 5 }] },
-  neck: { view: "front", shapes: [{ tag: "rect", x: 89, y: 45, width: 22, height: 16, rx: 5 }] },
-  calves: { view: "front", shapes: [{ tag: "rect", ...BASE.calfL }, { tag: "rect", ...BASE.calfR }] },
+  chest: { view: "front", shapes: [{ tag: "polygon", points: "62,58 138,58 133,100 67,100" }] },
+  shoulders: { view: "front", shapes: [BASE.shoulderL, BASE.shoulderR] },
+  biceps: { view: "front", shapes: [BASE.armL, BASE.armR] },
+  forearms: { view: "front", shapes: [BASE.forearmL, BASE.forearmR] },
+  abdominals: { view: "front", shapes: [{ tag: "polygon", points: "67,100 133,100 128,150 72,150" }] },
+  quadriceps: { view: "front", shapes: [BASE.thighL, BASE.thighR] },
+  adductors: { view: "front", shapes: [{ tag: "polygon", points: "96,182 104,182 102,250 98,250" }] },
+  abductors: {
+    view: "front",
+    shapes: [
+      { tag: "polygon", points: "64,182 72,182 70,253 66,253" },
+      { tag: "polygon", points: "136,182 128,182 130,253 134,253" },
+    ],
+  },
+  neck: { view: "front", shapes: [{ tag: "rect", x: 87, y: 41, width: 26, height: 18, rx: 5 }] },
+  calves: { view: "front", shapes: [BASE.calfL, BASE.calfR] },
 
-  traps: { view: "back", shapes: [{ tag: "polygon", points: "85,58 115,58 130,90 70,90" }] },
-  lats: { view: "back", shapes: [{ tag: "rect", x: 62, y: 90, width: 76, height: 38, rx: 10 }] },
-  middle_back: { view: "back", shapes: [{ tag: "rect", x: 85, y: 68, width: 30, height: 38, rx: 6 }] },
-  lower_back: { view: "back", shapes: [{ tag: "rect", x: 72, y: 126, width: 56, height: 22, rx: 6 }] },
-  triceps: { view: "back", shapes: [{ tag: "rect", ...BASE.armL }, { tag: "rect", ...BASE.armR }] },
-  glutes: { view: "back", shapes: [{ tag: "rect", ...BASE.hips }] },
-  hamstrings: { view: "back", shapes: [{ tag: "rect", ...BASE.legL }, { tag: "rect", ...BASE.legR }] },
+  traps: { view: "back", shapes: [{ tag: "polygon", points: "85,58 115,58 130,92 70,92" }] },
+  lats: { view: "back", shapes: [{ tag: "polygon", points: "64,95 136,95 130,145 70,145" }] },
+  middle_back: { view: "back", shapes: [{ tag: "polygon", points: "85,70 115,70 112,120 88,120" }] },
+  lower_back: { view: "back", shapes: [{ tag: "rect", x: 72, y: 145, width: 56, height: 25, rx: 6 }] },
+  triceps: { view: "back", shapes: [BASE.armL, BASE.armR] },
+  glutes: { view: "back", shapes: [BASE.pelvis] },
+  hamstrings: { view: "back", shapes: [BASE.thighL, BASE.thighR] },
 };
 
-function Shape({ shape, color }) {
-  const common = { fill: color, opacity: 0.85 };
-  if (shape.tag === "rect") return <rect {...shape} {...common} />;
-  if (shape.tag === "circle") return <circle {...shape} {...common} />;
-  if (shape.tag === "polygon") return <polygon {...shape} {...common} />;
+function Shape({ shape, color, strokeOnly }) {
+  const { tag, ...attrs } = shape;
+  const style = strokeOnly
+    ? { fill: "none", stroke: color, strokeWidth: 2 }
+    : { fill: color, opacity: 0.85 };
+  if (tag === "rect") return <rect {...attrs} {...style} />;
+  if (tag === "circle") return <circle {...attrs} {...style} />;
+  if (tag === "ellipse") return <ellipse {...attrs} {...style} />;
+  if (tag === "polygon") return <polygon {...attrs} {...style} />;
   return null;
 }
 
 function BaseSilhouette() {
-  const outline = { fill: "var(--input-bg)", stroke: "var(--border-strong)", strokeWidth: 2 };
+  const parts = Object.values(BASE);
   return (
     <>
-      <circle {...BASE.head} {...outline} />
-      <rect {...BASE.neck} {...outline} />
-      <rect {...BASE.torso} {...outline} />
-      <rect {...BASE.hips} {...outline} />
-      <rect {...BASE.armL} {...outline} />
-      <rect {...BASE.armR} {...outline} />
-      <rect {...BASE.forearmL} {...outline} />
-      <rect {...BASE.forearmR} {...outline} />
-      <rect {...BASE.legL} {...outline} />
-      <rect {...BASE.legR} {...outline} />
-      <rect {...BASE.calfL} {...outline} />
-      <rect {...BASE.calfR} {...outline} />
+      {parts.map((shape, i) => (
+        <Shape key={`fill${i}`} shape={shape} color="var(--input-bg)" />
+      ))}
+      {/* Second pass draws just the outlines on top, so overlapping
+          pieces (e.g. an arm crossing the torso's edge) still each show
+          a visible edge instead of merging into one blob. */}
+      {parts.map((shape, i) => (
+        <Shape key={`stroke${i}`} shape={shape} color="var(--border-strong)" strokeOnly />
+      ))}
     </>
   );
 }
@@ -96,7 +111,7 @@ export default function MuscleDiagram({ muscle, size = 140 }) {
 
   return (
     <svg
-      viewBox="0 0 200 340"
+      viewBox="0 0 200 360"
       width={size}
       height={size}
       style={{ background: "var(--surface)", borderRadius: 8, flexShrink: 0 }}

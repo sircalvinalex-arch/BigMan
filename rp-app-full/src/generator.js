@@ -83,56 +83,79 @@ export async function generateMesocycle({
   daysPerWeek = 4,
   track = "neutral", // "male" | "female" | "neutral"
   splitStyle = "bodypart", // "bodypart" (push/pull/legs-ish) | "fullbody" (every muscle, every day)
-  equipment = [],       // used when equipmentByDay is not provided
-  equipmentByDay = null, // optional: array of equipment-lists, one per day index
-  excludeBench = false, // true = skip any exercise that needs a bench, regardless of equipment selected
+  equipment = [],       // "home"/selected-equipment variant — used when equipmentByDay is not provided
+  equipmentByDay = null, // optional: array of equipment-lists, one per day index (home variant only)
+  excludeBench = false, // home variant only — true = skip any exercise that needs a bench
 }) {
   const styleTemplates = SPLIT_TEMPLATES[splitStyle] ?? SPLIT_TEMPLATES.bodypart;
   const split = styleTemplates[daysPerWeek] ?? styleTemplates[4];
   const landmarks = VOLUME_LANDMARKS[track] ?? VOLUME_LANDMARKS.neutral;
 
-  const weekPlans = [];
+  // Every mesocycle generates TWO parallel exercise-name variants — a
+  // "gym" version (no equipment restriction at all, since a real gym is
+  // assumed to have everything) and a "home" version using whatever
+  // equipment the person actually selected below. Both variants share
+  // the exact same skeleton: same muscles, same sets, same reps/RIR ramp
+  // week to week — only WHICH exercise fulfills each slot differs. That
+  // means switching between them mid-mesocycle (see App.jsx's variant
+  // switcher) never changes the programming itself, just which specific
+  // movements you're doing — so going gym-to-home-to-gym doesn't require
+  // regenerating anything or losing progression.
+  const weekPlansGym = [];
+  const weekPlansHome = [];
 
   for (let weekIndex = 0; weekIndex < weeks; weekIndex++) {
     const { reps, rir } = repRangeForWeek(weekIndex, weeks);
 
-    const days = await Promise.all(
+    const dayPairs = await Promise.all(
       split.map(async (muscles, dayIndex) => {
         const dayEquipment = equipmentByDay?.[dayIndex] ?? equipment;
 
-        const exercisesPerMuscle = await Promise.all(
+        const perMuscle = await Promise.all(
           muscles.map(async (muscle) => {
             const totalSets = targetSetsForWeek(landmarks, muscle, weekIndex, weeks);
             // Split the muscle's weekly sets across however many days train it
             const daysHittingThisMuscle = split.filter((d) => d.includes(muscle)).length;
             const setsThisDay = Math.max(1, Math.round(totalSets / daysHittingThisMuscle));
+            const count = setsThisDay > 6 ? 2 : 1; // split heavier volume across 2 exercises — shared by both variants
 
-            const picks = await pickExercisesForMuscle(muscle, {
-              equipment: dayEquipment,
-              excludeBench,
-              track,
-              count: setsThisDay > 6 ? 2 : 1, // split heavier volume across 2 exercises
-              weekIndex, // rotates which exercise gets picked week to week
-            });
+            const [gymPicks, homePicks] = await Promise.all([
+              pickExercisesForMuscle(muscle, { equipment: [], excludeBench: false, track, count, weekIndex, dayIndex }),
+              pickExercisesForMuscle(muscle, { equipment: dayEquipment, excludeBench, track, count, weekIndex, dayIndex }),
+            ]);
 
-            return picks
-              .map((ex, i) => ({
-                muscle,
-                name: ex.name,
-                sets: i === 0 ? Math.ceil(setsThisDay / picks.length) : Math.floor(setsThisDay / picks.length),
-                reps,
-                rir,
-              }))
-              .filter((e) => e.sets > 0);
+            const buildExercises = (picks) =>
+              picks
+                .map((ex, i) => ({
+                  muscle,
+                  name: ex.name,
+                  sets: i === 0 ? Math.ceil(setsThisDay / picks.length) : Math.floor(setsThisDay / picks.length),
+                  reps,
+                  rir,
+                }))
+                .filter((e) => e.sets > 0);
+
+            return { gym: buildExercises(gymPicks), home: buildExercises(homePicks) };
           })
         );
 
-        return { dayIndex: dayIndex + 1, exercises: exercisesPerMuscle.flat() };
+        return {
+          dayIndex: dayIndex + 1,
+          gym: { dayIndex: dayIndex + 1, exercises: perMuscle.flatMap((p) => p.gym) },
+          home: { dayIndex: dayIndex + 1, exercises: perMuscle.flatMap((p) => p.home) },
+        };
       })
     );
 
-    weekPlans.push({ weekIndex: weekIndex + 1, isDeload: weekIndex === weeks - 1, days });
+    weekPlansGym.push({ weekIndex: weekIndex + 1, isDeload: weekIndex === weeks - 1, days: dayPairs.map((d) => d.gym) });
+    weekPlansHome.push({ weekIndex: weekIndex + 1, isDeload: weekIndex === weeks - 1, days: dayPairs.map((d) => d.home) });
   }
+
+  const homeEquipmentLabel = equipmentByDay
+    ? "Per-day equipment"
+    : equipment.length > 0
+    ? equipment.join(", ")
+    : "Any equipment";
 
   return {
     name,
@@ -140,7 +163,14 @@ export async function generateMesocycle({
     daysPerWeek,
     track,
     splitStyle,
-    weekPlans,
+    homeEquipmentLabel,
+    activeVariant: "home", // which variant weekPlans below currently reflects
+    // weekPlans is the "currently active" variant — every existing
+    // consumer (logging, autoregulation, calendar, stats, export) reads
+    // this exactly as before and doesn't need to know variants exist at
+    // all. Switching variants (see App.jsx) replaces this in place.
+    weekPlans: weekPlansHome,
+    variants: { gym: weekPlansGym, home: weekPlansHome },
   };
 }
 

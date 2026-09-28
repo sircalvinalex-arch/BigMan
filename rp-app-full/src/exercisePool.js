@@ -135,13 +135,21 @@ export async function buildMuscleIndex() {
 // and a programming track. `weekIndex` rotates which exercises from the
 // top of the sorted candidate pool get used — so week 1 might use Barbell
 // Bench Press while week 3 uses Incline Dumbbell Press, instead of the
-// exact same exercise every single week of the block.
+// exact same exercise every single week of the block. `dayIndex` does the
+// same within a single week: without it, every day that trains a given
+// muscle (guaranteed on every day for a full-body split, and true for any
+// muscle a body-part split repeats across two days) would deterministically
+// get the exact same pick, since this function has no other source of
+// variation — same muscle + same week = same output. Multiplying weekIndex
+// by 5 (bigger than any realistic daysPerWeek) keeps the days within one
+// week from landing on the same offset as each other.
 export async function pickExercisesForMuscle(muscle, {
   equipment = [],
   excludeBench = false,
   track = "neutral",
   count = 2,
   weekIndex = 0,
+  dayIndex = 0,
 } = {}) {
   const candidates = await getCandidatesForMuscle(muscle, { equipment, excludeBench });
   if (candidates.length === 0) return [];
@@ -154,7 +162,7 @@ export async function pickExercisesForMuscle(muscle, {
   // don't rotate into weak, unfavored picks just for variety's sake.
   const rotationWindow = Math.min(sorted.length, Math.max(count * 3, 6));
   const pool = sorted.slice(0, rotationWindow);
-  const offset = weekIndex % pool.length;
+  const offset = (weekIndex * 5 + dayIndex) % pool.length;
   const rotated = [...pool.slice(offset), ...pool.slice(0, offset)];
 
   return rotated.slice(0, count).map((ex) => ({

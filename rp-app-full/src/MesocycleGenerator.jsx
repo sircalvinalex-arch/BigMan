@@ -3,7 +3,7 @@ import { generateMesocycle, SPLIT_TEMPLATES } from "./generator.js";
 import { EQUIPMENT_OPTIONS } from "./exerciseLibrary.js";
 import { storage } from "./storage.js";
 import { getWeekInsight } from "./weekInsights.js";
-import ExerciseDetailSheet, { planWithExerciseSwapped } from "./ExerciseDetailSheet.jsx";
+import ExerciseDetailSheet, { planWithExerciseSwapped, planWithExerciseSwappedForCycle } from "./ExerciseDetailSheet.jsx";
 
 const s = {
   card: {
@@ -273,6 +273,31 @@ export default function MesocycleGenerator({ onSaved }) {
             MEV toward MRV each week, then deload in the final week.
           </p>
 
+          {plan.variants && (
+            <>
+              <div style={s.label}>Previewing</div>
+              <div style={{ ...s.segmented, marginBottom: 12 }}>
+                <div
+                  style={s.segment(plan.activeVariant === "home")}
+                  onClick={() => setPlan((prev) => ({ ...prev, activeVariant: "home", weekPlans: prev.variants.home }))}
+                >
+                  Your equipment ({plan.homeEquipmentLabel})
+                </div>
+                <div
+                  style={s.segment(plan.activeVariant === "gym")}
+                  onClick={() => setPlan((prev) => ({ ...prev, activeVariant: "gym", weekPlans: prev.variants.gym }))}
+                >
+                  Full gym
+                </div>
+              </div>
+              <p style={s.disclosure}>
+                Every mesocycle generates both versions — same muscles, sets, and week-to-week
+                progression either way, just different exercises. Save once and switch between
+                them any time from the Log tab without losing your place or regenerating.
+              </p>
+            </>
+          )}
+
           {plan.weekPlans.map((week) => {
             const insight = getWeekInsight(week, plan.weeks, plan.track);
             return (
@@ -317,9 +342,13 @@ export default function MesocycleGenerator({ onSaved }) {
         <ExerciseDetailSheet
           exercise={detailExercise.exercise}
           onClose={() => setDetailExercise(null)}
-          onSwap={async (newName) => {
+          onSwap={async (newName, { wholeCycle } = {}) => {
             const { weekIndex, dayIndex, exerciseIndex } = detailExercise.context;
-            setPlan((prev) => planWithExerciseSwapped(prev, { weekIndex, dayIndex, exerciseIndex, newName }));
+            setPlan((prev) =>
+              wholeCycle
+                ? planWithExerciseSwappedForCycle(prev, { dayIndex, exerciseIndex, newName })
+                : planWithExerciseSwapped(prev, { weekIndex, dayIndex, exerciseIndex, newName })
+            );
           }}
         />
       )}

@@ -16,7 +16,7 @@ import { autoregulateNextWeek, summarizeAdjustments } from "./autoregulate.js";
 import { computeFatigueSignals } from "./fatigueSignals.js";
 import FatigueBanner from "./FatigueBanner.jsx";
 import BackgroundMotif from "./BackgroundMotif.jsx";
-import ExerciseDetailSheet, { planWithExerciseSwapped } from "./ExerciseDetailSheet.jsx";
+import ExerciseDetailSheet, { planWithExerciseSwapped, planWithExerciseSwappedForCycle } from "./ExerciseDetailSheet.jsx";
 import StretchRoutineGenerator from "./StretchRoutineGenerator.jsx";
 import { personalRecords, findNewPRs } from "./stats.js";
 import { aiClient } from "./aiClient.js";
@@ -641,6 +641,39 @@ function Dashboard({ user }) {
             </select>
           )}
 
+          {activeMeso?.plan?.variants && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>Training environment</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {["home", "gym"].map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    style={{
+                      flex: 1,
+                      padding: "8px",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      border: "1px solid " + (activeMeso.plan.activeVariant === key ? "var(--accent-blue)" : "var(--border-strong)"),
+                      background: activeMeso.plan.activeVariant === key ? "var(--accent-blue)" : "transparent",
+                      color: activeMeso.plan.activeVariant === key ? "var(--on-accent)" : "var(--text-muted)",
+                    }}
+                    onClick={async () => {
+                      if (activeMeso.plan.activeVariant === key) return;
+                      const updatedPlan = { ...activeMeso.plan, activeVariant: key, weekPlans: activeMeso.plan.variants[key] };
+                      await storage.updateMesocyclePlan(activeMeso.id, updatedPlan);
+                      refresh();
+                    }}
+                  >
+                    {key === "home" ? `Your equipment (${activeMeso.plan.homeEquipmentLabel})` : "Full gym"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {activeMeso?.plan && (
             <select
               style={s.input}
@@ -871,9 +904,11 @@ function Dashboard({ user }) {
           exercise={detailExercise.exercise}
           onClose={() => setDetailExercise(null)}
           onLogThis={(name) => setExerciseName(name)}
-          onSwap={async (newName) => {
+          onSwap={async (newName, { wholeCycle } = {}) => {
             const { meso, weekIndex, dayIndex, exerciseIndex } = detailExercise.planContext;
-            const updatedPlan = planWithExerciseSwapped(meso.plan, { weekIndex, dayIndex, exerciseIndex, newName });
+            const updatedPlan = wholeCycle
+              ? planWithExerciseSwappedForCycle(meso.plan, { dayIndex, exerciseIndex, newName })
+              : planWithExerciseSwapped(meso.plan, { weekIndex, dayIndex, exerciseIndex, newName });
             await storage.updateMesocyclePlan(meso.id, updatedPlan);
             refresh();
           }}

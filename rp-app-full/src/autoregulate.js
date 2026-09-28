@@ -68,31 +68,64 @@ export function autoregulateNextWeek(plan, workouts) {
   const plannedExercises = lastWeek.days.flatMap((day) => day.exercises);
   const feedback = computeMuscleFeedback(lastWeekWorkouts, plannedExercises);
 
-  const updatedWeekPlans = plan.weekPlans.map((week, idx) => {
-    if (idx !== nextWeekIdx) return week;
+  // Compute one adjustment value per MUSCLE (not per exercise slot) once,
+  // then apply it by muscle name in every variant independently — not by
+  // array position. Position isn't reliable across variants: gym and
+  // home can end up with a different number of exercise entries for the
+  // same muscle (e.g. home's equipment only turns up one matching
+  // exercise for a muscle where gym found two), which would shift
+  // everything after that point out of alignment if matched by index.
+  // Muscle name is the one thing guaranteed identical between variants,
+  // since both are built from the same shared skeleton.
+  const adjustmentByMuscle = {};
+  for (const ex of plan.weekPlans[nextWeekIdx].days.flatMap((d) => d.exercises)) {
+    if (adjustmentByMuscle[ex.muscle] !== undefined) continue;
+    const diffs = feedback[ex.muscle];
+    if (!diffs || diffs.length === 0) {
+      adjustmentByMuscle[ex.muscle] = 0;
+      continue;
+    }
+    const avgDiff = diffs.reduce((s, v) => s + v, 0) / diffs.length;
+    if (Math.abs(avgDiff) < NOISE_THRESHOLD) {
+      adjustmentByMuscle[ex.muscle] = 0;
+      continue;
+    }
+    // Easier than planned (positive diff) -> add sets. Harder -> remove.
+    const rawAdjustment = Math.round(avgDiff);
+    adjustmentByMuscle[ex.muscle] = Math.max(-MAX_ADJUSTMENT_SETS, Math.min(MAX_ADJUSTMENT_SETS, rawAdjustment));
+  }
 
-    const updatedDays = week.days.map((day) => ({
-      ...day,
-      exercises: day.exercises.map((ex) => {
-        const diffs = feedback[ex.muscle];
-        if (!diffs || diffs.length === 0) return ex;
+  function applyToWeekPlans(weekPlans) {
+    return weekPlans.map((week, idx) => {
+      if (idx !== nextWeekIdx) return week;
+      return {
+        ...week,
+        days: week.days.map((day) => ({
+          ...day,
+          exercises: day.exercises.map((ex) => {
+            const adjustment = adjustmentByMuscle[ex.muscle] ?? 0;
+            if (adjustment === 0) return ex;
+            return { ...ex, sets: Math.max(1, ex.sets + adjustment), autoregulated: true };
+          }),
+        })),
+      };
+    });
+  }
 
-        const avgDiff = diffs.reduce((s, v) => s + v, 0) / diffs.length;
-        if (Math.abs(avgDiff) < NOISE_THRESHOLD) return ex;
+  // Apply to every variant, not just the currently active one — the
+  // whole point of auto-regulation is that your actual performance
+  // should influence the plan going forward, and that should hold
+  // regardless of which environment (gym/home) you happen to train in
+  // next. Without this, switching environments could silently revert
+  // you to un-adjusted volume.
+  if (plan.variants) {
+    const updatedVariants = Object.fromEntries(
+      Object.entries(plan.variants).map(([key, weekPlans]) => [key, applyToWeekPlans(weekPlans)])
+    );
+    return { ...plan, variants: updatedVariants, weekPlans: updatedVariants[plan.activeVariant] };
+  }
 
-        // Easier than planned (positive diff) -> add sets. Harder -> remove.
-        const rawAdjustment = Math.round(avgDiff);
-        const adjustment = Math.max(-MAX_ADJUSTMENT_SETS, Math.min(MAX_ADJUSTMENT_SETS, rawAdjustment));
-        const newSets = Math.max(1, ex.sets + adjustment);
-
-        return { ...ex, sets: newSets, autoregulated: adjustment !== 0 };
-      }),
-    }));
-
-    return { ...week, days: updatedDays };
-  });
-
-  return { ...plan, weekPlans: updatedWeekPlans };
+  return { ...plan, weekPlans: applyToWeekPlans(plan.weekPlans) };
 }
 
 // Human-readable summary of what changed, for showing the user before

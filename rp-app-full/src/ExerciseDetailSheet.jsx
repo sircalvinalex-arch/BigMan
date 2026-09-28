@@ -11,6 +11,16 @@ function formatMuscleLabel(muscle) {
     .join(" ");
 }
 
+// Keeps plan.variants[activeVariant] pointing at the same array as
+// plan.weekPlans after an edit. Without this, a swap updates weekPlans
+// but leaves the sibling variant array stale — switching environments
+// away and back (see App.jsx's variant switcher) would silently revert
+// the swap, since switching just re-points weekPlans at variants[key].
+function withVariantSynced(plan) {
+  if (!plan.variants || !plan.activeVariant) return plan;
+  return { ...plan, variants: { ...plan.variants, [plan.activeVariant]: plan.weekPlans } };
+}
+
 // Produces an updated plan with exactly one exercise slot renamed, leaving
 // everything else (sets/reps/rir ramp, other days/weeks) untouched.
 // Exported so callers can use it for either a persisted swap (App.jsx,
@@ -18,7 +28,7 @@ function formatMuscleLabel(muscle) {
 // (MesocycleGenerator.jsx's preview, via its own plan state) — this
 // component doesn't know or care which; see onSwap below.
 export function planWithExerciseSwapped(plan, { weekIndex, dayIndex, exerciseIndex, newName }) {
-  return {
+  return withVariantSynced({
     ...plan,
     weekPlans: plan.weekPlans.map((week) => {
       if (week.weekIndex !== weekIndex) return week;
@@ -35,7 +45,30 @@ export function planWithExerciseSwapped(plan, { weekIndex, dayIndex, exerciseInd
         }),
       };
     }),
-  };
+  });
+}
+
+// Same idea, but renames that exercise slot on EVERY week instead of just
+// one — "replace this for the whole cycle" rather than a one-off swap.
+// Matches purely by dayIndex + exerciseIndex, not by muscle name, since
+// that's a stable position across weeks (each week has the same day/slot
+// structure by construction) and doesn't require the muscle to be unique.
+export function planWithExerciseSwappedForCycle(plan, { dayIndex, exerciseIndex, newName }) {
+  return withVariantSynced({
+    ...plan,
+    weekPlans: plan.weekPlans.map((week) => ({
+      ...week,
+      days: week.days.map((day) => {
+        if (day.dayIndex !== dayIndex) return day;
+        return {
+          ...day,
+          exercises: day.exercises.map((ex, i) =>
+            i === exerciseIndex ? { ...ex, name: newName } : ex
+          ),
+        };
+      }),
+    })),
+  });
 }
 
 const s = {
@@ -125,6 +158,7 @@ export default function ExerciseDetailSheet({ exercise, onClose, onLogThis, onSw
   const [alternatives, setAlternatives] = useState([]);
   const [swapping, setSwapping] = useState(false);
   const [error, setError] = useState("");
+  const [applyToWholeCycle, setApplyToWholeCycle] = useState(false);
   const [imageUrls, setImageUrls] = useState(null); // null = still loading, [] = none found
 
   useEffect(() => {
@@ -158,7 +192,7 @@ export default function ExerciseDetailSheet({ exercise, onClose, onLogThis, onSw
     setSwapping(true);
     setError("");
     try {
-      await onSwap(newName);
+      await onSwap(newName, { wholeCycle: applyToWholeCycle });
       onClose();
     } catch (err) {
       setError(err.message || "Couldn't save that swap — try again.");
@@ -215,6 +249,10 @@ export default function ExerciseDetailSheet({ exercise, onClose, onLogThis, onSw
         {showSwap && (
           <div style={s.swapSection}>
             {error && <p style={s.error}>{error}</p>}
+            <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, fontSize: 12, cursor: "pointer" }}>
+              <input type="checkbox" checked={applyToWholeCycle} onChange={(e) => setApplyToWholeCycle(e.target.checked)} />
+              Replace for the whole mesocycle (every week), not just this one
+            </label>
             {loadingAlts && <p style={s.empty}>Finding alternatives for this muscle group...</p>}
             {!loadingAlts && alternatives.length === 0 && (
               <p style={s.empty}>No other exercises found for this muscle group.</p>
